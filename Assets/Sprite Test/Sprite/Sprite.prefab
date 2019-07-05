@@ -1,0 +1,160 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &100000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  serializedVersion: 4
+  m_Component:
+  - 4: {fileID: 400000}
+  - 102: {fileID: 10200000}
+  - 23: {fileID: 2300000}
+  - 114: {fileID: 11400000}
+  - 114: {fileID: 11400002}
+  - 143: {fileID: 14300000}
+  m_Layer: 0
+  m_Name: Sprite
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &400000
+Transform:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 100000}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+--- !u!23 &2300000
+MeshRenderer:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_Materials:
+  - {fileID: 2100000, guid: 711c8c858546e934baa87dd3b080d454, type: 2}
+  m_SubsetIndices: 
+  m_StaticBatchRoot: {fileID: 0}
+  m_UseLightProbes: 0
+  m_ReflectionProbeUsage: 1
+  m_ProbeAnchor: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingOrder: 0
+--- !u!102 &10200000
+TextMesh:
+  serializedVersion: 3
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 100000}
+  m_Text: '!'
+  m_OffsetZ: 0
+  m_CharacterSize: 0.22
+  m_LineSpacing: 1
+  m_Anchor: 0
+  m_Alignment: 0
+  m_TabSize: 4
+  m_FontSize: 0
+  m_FontStyle: 0
+  m_RichText: 1
+  m_Font: {fileID: 12800000, guid: 23b5f79200942714080752f00a85a6fa, type: 2}
+  m_Color:
+    serializedVersion: 2
+    rgba: 4294967295
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e996cef2fce1704990834affda07627, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spriteMaterial: {fileID: 2100000, guid: 711c8c858546e934baa87dd3b080d454, type: 2}
+  animations:
+  - {fileID: 12800000, guid: 23b5f79200942714080752f00a85a6fa, type: 2}
+  - {fileID: 12800000, guid: f13d5b8f80eec704f9310125da736b7b, type: 2}
+  - {fileID: 12800000, guid: cafb37c08677ff548850a224f3b516a6, type: 2}
+  - {fileID: 12800000, guid: 6f18334afd8176046ac26e47320c47fc, type: 2}
+  - {fileID: 12800000, guid: eb67f579fd8d97a4bb5f873621932781, type: 2}
+  - {fileID: 12800000, guid: ee0dde4f5f974b44a99cf6fb618cb4cc, type: 2}
+  - {fileID: 12800000, guid: ce7988394f980404aa91d0ef0e758d57, type: 2}
+  - {fileID: 12800000, guid: b399bf3f28f08e54d993ef29b67e4d4e, type: 2}
+  - {fileID: 12800000, guid: 3e2059afead4a3f41988af64bd425d11, type: 2}
+--- !u!114 &11400002
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7596e46bb4f794b4098e0f5712cba153, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spriteMaterial: {fileID: 2100000, guid: 711c8c858546e934baa87dd3b080d454, type: 2}
+  animations:
+  - {fileID: 12800000, guid: 23b5f79200942714080752f00a85a6fa, type: 2}
+  - {fileID: 12800000, guid: f13d5b8f80eec704f9310125da736b7b, type: 2}
+  - {fileID: 12800000, guid: cafb37c08677ff548850a224f3b516a6, type: 2}
+  - {fileID: 12800000, guid: 6f18334afd8176046ac26e47320c47fc, type: 2}
+  - {fileID: 12800000, guid: eb67f579fd8d97a4bb5f873621932781, type: 2}
+  - {fileID: 12800000, guid: ee0dde4f5f974b44a99cf6fb618cb4cc, type: 2}
+  - {fileID: 12800000, guid: ce7988394f980404aa91d0ef0e758d57, type: 2}
+  - {fileID: 12800000, guid: b399bf3f28f08e54d993ef29b67e4d4e, type: 2}
+  - {fileID: 12800000, guid: 3e2059afead4a3f41988af64bd425d11, type: 2}
+  movement:
+    maxSpeed: 2
+    jumpPower: 8
+    gravity: 9.8
+  animate:
+    frameRate: 10
+  buttons: {}
+--- !u!143 &14300000
+CharacterController:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 100000}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Height: 2
+  m_Radius: 0.5
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.1
+  m_MinMoveDistance: 0
+  m_Center: {x: 0, y: 1.1, z: 0}
+--- !u!1001 &100100000
+Prefab:
+  m_ObjectHideFlags: 1
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications: []
+    m_RemovedComponents: []
+  m_ParentPrefab: {fileID: 0}
+  m_RootGameObject: {fileID: 100000}
+  m_IsPrefabParent: 1

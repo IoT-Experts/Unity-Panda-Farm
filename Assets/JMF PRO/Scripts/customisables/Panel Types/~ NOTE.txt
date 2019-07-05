@@ -1,0 +1,26 @@
+
+is in Front - defines whether the panel is in front of the game Piece or not. (e.g., ice panel)
+
+Has Starting Piece - defines whether the panel has a starting piece or not. 
+                     (e.g., empty panels and rock panels do not have a starting piece)
+
+Has Default Panel - choose between having the default panel created or not...
+
+Has No Skin - tell GameManager that this panel has no defined skinned. No GameObject will be created.
+              NOTE : Will still create the default panel if "Has Default Panel" is checked.
+
+
+Default strength - the default durability (number of hits it takes) of this panel before it changes back to default panel.
+
+Skin List To Use - defines the current list of skin to use dependant on the current board type.
+                   ( Auto, Square list only, Hex list only)
+
+Skin Square - A list of skin Defines the visual of the object in use for Square board types.
+
+Skin Hex - A list of skin Defines the visual of the object in use for Hex board types.
+---------------
+p.s.> - the visual of this panel. Element 0 = the last visual before it gets destroyed.
+       Therefore, the value of durability (durability + 1) is directly connected to the skin it is using.
+       e.g., durability 1 = skin element 0, durability 0 = change back to basic panel.
+       NOTE : durability is not the same as strength value in Board Layout.
+                Board Layout already compensated for strength + 1 = durability.

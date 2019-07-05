@@ -1,0 +1,1 @@
+Please assign all Animation prefabs into the "Anims" layer ( layer 8 if it is not named)

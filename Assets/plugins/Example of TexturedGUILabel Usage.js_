@@ -1,0 +1,9 @@
+#pragma strict
+
+var theFont : Font;
+
+function OnGUI () {
+	//Use TexturedGUILabel to draw text in UnityGUI
+	//NOTE: In order to call TexturedGUILabel like this (in js), you need to be using the js version of the TexturedGUILabel class
+	TexturedGUILabel(Rect(20,20,400,110),"This is an OnGUI Textured GUILabel",theFont);
+}

@@ -1,0 +1,1 @@
+To minimize draw calls during game runtime, Please use any of 2d Toolkit's sprite type.

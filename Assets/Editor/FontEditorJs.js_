@@ -1,0 +1,3476 @@
+//This is the v1.0 UnityScript (js) Version of FontSetter/Packer, included for reference,
+//it is missing a small amount of 'polish' from the current version of the C# script,
+//and may be missing some bugfixes from the later versions
+
+#pragma strict
+#pragma downcast
+import System.Collections.Generic;
+import System.Reflection;
+import System.IO;
+
+class FontEditorJs extends EditorWindow {
+
+private var SpriteEditor = false;
+private var FontList : Font[];
+private var FontListNames : String[];
+private var theFont : Font;
+private var theTex : Texture2D;
+private var theGUISkin : GUISkin;
+private var SpritePreview : GameObject;
+private var SpritePreviewT : TextMesh;
+private var SpritePreviewR : Renderer;
+private var TextPreview : GameObject;
+private var TextPreviewT : TextMesh;
+private var TextPreviewR : Renderer;
+private var TextPreviewM : Material;
+private var UsePreview = true;
+private var BGCol : Color = Color(0.46,0.5,0.46);
+private var MenuBar : Rect = new Rect(0,0,150,position.height);
+private var ErrorMsg : boolean[] = new boolean[19];
+private enum Errors { NoMaterial, NoTexture, NoSpriteMaterial, NoTextMesh,  NPOT, ReadWrite, Format, Spacebar, Size, SameFont, OverlapChar, OverlapSprite, DupeChar, DupeSprite, SkipSprite, NoFonts, MissedFont, ShareFont, UnevenLength }
+private var Rects : List.<SetRect>;
+private var AutoRectList : List.<SetRect>;
+private var UnsortAutoRectList : List.<SetRect>;
+private var RepeatSetting = false;
+private var MovingRectOffset = Vector2(0,0);
+private var ResizingRectOffset = Vector2(0,0);
+private var SnapFound = false;
+private var SnapRect : Rect;
+private var Snap = 0;
+private var Snaps = ["None","Snap","Horiz","Vert"];
+private var PerCharacterOffset = false;
+private var TexAsInts :int[,];
+private var PM = false;
+private var PMS = false;
+private var Colors = [Color(1,1,1),Color(0.871,0.035,0.035),Color(0.055,0.431,0.063),Color(0.102,0.153,0.824),Color(0.91,0.902,0.224),Color(0.216,0.749,0.741),Color(0.549,0.086,0.745),Color(0.914,0.341,0.059),Color(0.278,0.914,0.059)];
+
+//Interface vars
+private var ClickedRectInd = -1;
+private var ClickedOnRect = false;
+private var MovingRect = false;
+private var ResizingRect = false;
+private var MovingSpriteCenter = false;
+private var MovingAllSpriteCenterStart = Vector2(0,0);
+private var MovingSlider = false;
+private var MovingAllToggle = false;
+private var MovingAllSpriteToggle = false;
+private var MovingAllSliderStart = 0;
+
+//GUI vars
+private var MouseOffGUI = false;
+private var UsingEditor = false;
+private var UsingPacker = false;
+private var UsingMenu = true;
+private var FirstOverlapRect = 0;
+private var SecondOverlapRect = 0;
+private var FirstDupeRect = 0;
+private var SecondDupeRect = 0;
+
+private var DupeErrorString = "";
+private var OverlapErrorString = "";
+private var SkipErrorString = "";
+private var SplitError : String[];
+private var ReFocusBlank = false;
+private var ReFocusChar = false;
+private var MenuPics : Texture2D[];
+private var OrientPics : Texture2D[];
+private var ResetPrompt = false;
+private var AutoPrompt = false;
+private var MenuPrompt = false;
+private var PromptOffset1 = 0.0;
+private var PromptOffset2 = 0.0;
+private var PromptOffset3 = 0.0;
+private var PromptOffset4 = 0.0;
+private var PromptOffset1Dest = 0.0;
+private var PromptOffset2Dest = 0.0;
+private var PromptOffset3Dest = 0.0;
+private var PromptOffset4Dest = 0.0;
+private var SliderSize = 4.0; //Change this to get bigger sliders, no GUI control
+
+//Autoset vars
+private var CharRepeatList : List.<char>;
+private var AutoSetDialog = false;
+private var DialogStop = false;
+private var AutoSetCharStr = "";
+private var AutoSetIndex = 0;
+private var Shape : List.<Vector2>;
+private var FloodfillPadding = 0; //increase this to pad Rects out in autoset and shrinkwrap shape finding, no GUI control
+
+//SmartSet vars
+private var SmartMode = false;
+private var SmartColor : Color = Color.red;
+private var ShapeSmartLine : List.<Vector2>;
+
+//Sprite vars
+private var FontContainer : AnimatedSprite;
+private var FontListCount = 1;
+private var RectFontIndex = 0;
+private var RectFontIndexOld = 0;
+private var AddingFonts = false;
+private var SpriteIndexRepeatList : List.<Vector3>;
+private var SpriteIndex : int;
+private var SpriteIndexOld : int;
+private var SpriteSetDialog = false;
+private var DupeMissOffset = 0;
+private enum defaultPivotPointEnum { PivotPixel=0, BottomRight=1, BottomCenter=2, BottomLeft=3, MiddleRight=4, MiddleCenter=5, MiddleLeft=6, TopRight=7, TopCenter=8, TopLeft=9 }
+private var defaultPivotPoint : defaultPivotPointEnum = 0;
+private var defaultPivots = [Vector2(0,0),Vector2(0,0),Vector2(0.5,0),Vector2(1,0),Vector2(0,0.5),Vector2(0.5,0.5),Vector2(1,0.5),Vector2(0,1),Vector2(0.5,1),Vector2(1,1)];
+private var SpritePropertiesLoopBehaviour : SpritePropertiesLoopBehaviourEnum = 0;
+private var SpritePropertiesLoopBehaviourOld : SpritePropertiesLoopBehaviourEnum = 0;
+private enum SpritePropertiesLoopBehaviourEnum { Loop=0, PingPong=1, OnceAndHold=2, OnceAndChange=3 }
+private var SpritePropertiesLoopStart = 0;
+private var SpritePropertiesLoopStartOld = 0;
+private var SpritePropertiesNextAnim = 0;
+private var SpritePropertiesNextAnimOld = 0;
+private var SpritePropertiesFontIndex = 0;
+private var SpritePropertiesFontIndexOld = 0;
+private var SpritePropertiesAnimFPS = 0.0;
+private var SpritePropertiesAnimFPSOld = 0.0;
+
+//animating sprite in scene
+private var lastAnimFrameTime = 0.0;
+private var frameTime = 0.1;
+private var SpriteFrame = 0;
+private var SpriteFrameOld = 0;
+private var AutoAnimate = true;
+private var AutoAnimateOld = true;
+
+//Font vars
+private var CharCount = 0;
+private var UVx : int = 0;
+private var UVy : int = 0;
+private var UVw : int = 0;
+private var UVh : int = 0;
+private var UVRect = Rect(0,0,0,0);
+private var Cx : float = 0;
+private var Cy : float = 0;
+private var CPos = Vector2(0,0);
+private var WidBefore = 0.0;
+private var WidBeforeOld = 0.0;
+private var WidAfter = 0.0;
+private var WidAfterOld = 0.0;
+private var ChrStr = "";
+private var ChrL = 47;
+private var Orient : int = 0;
+private var OrientOld : int = 0;
+
+//"drawOffset" vars
+private var drawOffsetClick = false;
+private var drawOffsetPos : Vector2;
+private var drawOffsetPosDest : Vector2;
+private var drawOffsetClickStartScreen : Vector2;
+private var ShrunkX = 0;
+private var ShrunkY = 0;
+private var drawOffsetScale = 1.0;
+private var drawOffsetScaleDest = 1.0;
+
+//Rect Packer vars
+private var TimeA : Date;
+private var inFont : Font;
+private var outFont : Font;
+private var inFontList : Font[];
+private var outFontList : Font[];
+private var inFontContainer : AnimatedSprite;
+private var outFontContainer : AnimatedSprite;
+private var inTex : Texture2D;
+private var outTex : Texture2D;
+private var FitToPOT = true;
+private var inTexWidth = 512;
+private var inTexHeight = 512;
+private var StartPackRectList : List.<PackRect>;
+private var ResultPackRectList : List.<PackRect>;
+private var swapPackRect : PackRect;
+private var GetPackRect : PackRect;
+private var NewLineIndex = 0;
+private var LineIndex = 0;
+private var PackMode = 0;
+private var SortMode = 0;
+private var Packs = ["Simple Pack","Switch back","Partition","Anchor"];
+private var Sorts = ["Sort by height","Sort by width","Longest length","Shortest length"];
+private var Anchors : List.<Vector2>;
+private var Partitions : List.<Rect>;
+private var PackSizeX : int = 0;
+private var PackSizeY : int = 0;
+private var MaxSizeX : int = 0;
+private var MaxSizeY : int = 0;
+private var AllowNPOT = true;
+private var AllowRotationTest = true;
+private var AnchorSort = true;
+private var PackBuffer = 1;
+
+
+@MenuItem("Window/Font Editor/Font Editor (js)")
+static function Init() {
+	var window = GetWindow(FontEditorJs);
+	window.Show();
+	window.position = Rect(20,80, 512+300,512);
+}
+
+
+//This class stores the start and result rect for fontsetter
+class PackRect {
+	var CI : CharacterInfo;
+	var CIIndex : int;
+	var fontIndex : int;
+	var StartRect : Rect = Rect(0,0,0,0);
+	var ResultRect : Rect = Rect(0,0,0,0);
+	var Height : float = 0.0;
+	var SameOrient : boolean = true;
+	
+	function PackRect(f:PackRect){
+		this.CI = f.CI;
+		this.CIIndex = f.CIIndex;
+		this.fontIndex = f.fontIndex;
+		this.StartRect = f.StartRect;
+		this.ResultRect = f.ResultRect;
+		this.Height = f.Height;
+		this.SameOrient = f.SameOrient;
+	}
+	function PackRect(){
+		this.CI = new CharacterInfo();
+		this.CIIndex = 0;
+		this.fontIndex = 0;
+		this.StartRect = Rect(0,0,0,0);
+		this.ResultRect = Rect(0,0,0,0);
+		this.Height = 0.0;
+		this.SameOrient = true;
+	}
+}
+
+class SetRect {
+	var rect : Rect = Rect(0,0,0,0);
+	var aWidth : float = 0.0;
+	var bWidth : float = 0.0;
+	var Orient : boolean = false;
+	var vOffset : float = 0.0;
+	var spritePivot : Vector2 = Vector2(0,0);
+	var fontIndex : int = 0;
+	var CIIndex : int = 0;
+	
+	function SetRect(){
+		this.rect = Rect(0,0,0,0);
+		this.aWidth = 0.0;
+		this.bWidth = 0.0;
+		this.Orient = false;
+		this.vOffset = 0.0;
+		this.spritePivot = Vector2(0,0);
+		this.fontIndex = 0;
+		this.CIIndex = -1;
+	}
+	
+	function SetRect(r:SetRect){
+		if(r.Orient){
+			this.rect = Rect(r.rect.x, r.rect.y + r.rect.height, r.rect.width, r.rect.height);
+		} else {
+			this.rect = Rect(r.rect.x + r.rect.width, r.rect.y, r.rect.width, r.rect.height);
+		}
+		this.aWidth = 0.0;
+		this.bWidth = 0.0;
+		this.Orient = r.Orient;
+		this.vOffset = r.vOffset;
+		this.spritePivot = r.spritePivot;
+		this.fontIndex = r.fontIndex;
+		this.CIIndex = -1;
+	}
+}
+
+
+//Awake
+function Awake () {
+	//Load some images for the GUI
+	theGUISkin = EditorGUIUtility.Load("FontSetter/Font Setter Skin.guiskin") as GUISkin;
+	OrientPics = new Texture2D[2];
+	OrientPics[0] = EditorGUIUtility.Load("FontSetter/GUIOrient_01.png") as Texture2D;
+	OrientPics[1] = EditorGUIUtility.Load("FontSetter/GUIOrient_02.png") as Texture2D;
+	MenuPics = new Texture2D[3];
+	MenuPics[0] = EditorGUIUtility.Load("FontSetter/GUIBlankBar.png") as Texture2D;
+	MenuPics[1] = EditorGUIUtility.Load("FontSetter/GUILeftBar.png") as Texture2D;
+	MenuPics[2] = EditorGUIUtility.Load("FontSetter/GUIRightBar.png") as Texture2D;
+	SpriteIndexRepeatList = new List.<Vector3>();
+	CharRepeatList = new List.<char>();
+	FontList = new Font[1];
+	PM = EditorApplication.isPlaying;
+}
+
+
+//This animates a sprite during setter
+function Update () {
+	if(SpriteEditor && !SpriteSetDialog && FontContainer != null && UsingEditor && SpritePreview != null){
+		if(EditorApplication.timeSinceStartup > lastAnimFrameTime + frameTime && AutoAnimate){
+			lastAnimFrameTime = EditorApplication.timeSinceStartup;
+			SpriteFrame++;
+			if(SpriteFrame > FontList[SpritePropertiesFontIndex].characterInfo.Length-2){
+				if(SpritePropertiesLoopBehaviour == 0){
+					SpriteFrame = FontList[SpritePropertiesFontIndex].characterInfo[0].uv.y;
+				} else {
+					SpriteFrame = 0;
+				}
+			}
+			var C:char = SpriteFrame+33;
+			SpritePreviewT.text = "" + C;
+		}
+	}
+}
+
+//OnGUI
+function OnGUI () {
+	Undo.SetSnapshotTarget(FontList, "Adjust Font Rect");
+	wantsMouseMove = true;
+	MenuBar = Rect(0,0,150,position.height);
+	var e : Event = Event.current;
+		
+	if(ReFocusBlank){
+		GUI.FocusControl("");
+		ReFocusBlank = false;
+	}
+	if(ReFocusChar){
+		GUI.FocusControl("CharacterEntry");
+		ReFocusChar = false;
+	}
+	
+	if (!PMS && PM != EditorApplication.isPlaying){
+		if(PM){
+			PM = false;
+		} else {
+			position = Rect(position.x, position.y - 5, 220,150);
+			PMS = true;
+			return;
+		}
+	}
+	if (PMS){
+		GUI.skin = theGUISkin;
+		GUI.BeginGroup(Rect(position.width/2 - 80, position.height/2 - 50, 160, 80));
+		GUI.Box(Rect(0, 0, 160, 80),"");
+		GUI.Label(Rect(10,4,140,80),"This extension doesn't support entering PlayMode, please close and re-open it's window");
+		GUI.EndGroup();
+		return;
+	}
+	
+	if (UsingPacker) {
+		drawOffsetPos = Vector2.Lerp(drawOffsetPos, drawOffsetPosDest, 0.02);
+		//Rightmouse down, start drawOffset pan
+		if (e.type == EventType.MouseDown && (e.button == 2 || e.button == 1)) {
+			drawOffsetClick = true;
+		}
+
+		//Right Mouseup from drawOffset move
+		if (e.type == EventType.MouseUp && (e.button == 2 || e.button == 1) && drawOffsetClick) {
+			drawOffsetClick = false;
+		}
+
+		//Dragging with rightmouse, update drawOffset pan
+		if (e.type == EventType.MouseDrag && (e.button == 2 || e.button == 1) && drawOffsetClick) {
+			drawOffsetPosDest = drawOffsetPosDest + Event.current.delta;
+			drawOffsetPosDest = Vector2(Mathf.Clamp(drawOffsetPosDest.x, -(outTex.width / 2.0), (outTex.width / 2.0)),
+										Mathf.Clamp(drawOffsetPosDest.y, -(outTex.height / 2.0), (outTex.height / 2.0)));
+		}
+
+	}
+
+	MouseOffGUI = Rect(MenuBar.width,0,position.width-300,position.height).Contains(Event.current.mousePosition);
+	if(UsingEditor){
+		ShrunkX = (theTex.width - (position.width-(MenuBar.width*2)))/2;
+		ShrunkY = (theTex.height - position.height)/2;
+		drawOffsetPos = Vector2.Lerp(drawOffsetPos, drawOffsetPosDest, 0.02);
+		
+		if(e.type == EventType.ScrollWheel){
+			drawOffsetPosDest /= drawOffsetScaleDest;
+			drawOffsetScaleDest = Mathf.Clamp(Mathf.RoundToInt((drawOffsetScale + (e.delta.y>0?-0.5:0.5))*2)/2.0,0.5,10);
+			drawOffsetPosDest *= drawOffsetScaleDest;
+		}
+		drawOffsetScale = Mathf.Lerp(drawOffsetScale, drawOffsetScaleDest, 0.02);
+		
+		
+		
+		//Leftmouse down
+		if(e.type == EventType.MouseDown && e.button == 0 && MouseOffGUI && !AutoSetDialog && !SpriteSetDialog){
+			//register undo for any mousedown inside the gui
+			Undo.CreateSnapshot();
+			Undo.RegisterSnapshot();
+			
+			//checkPos is the position of the mouse with respect to the bitmap
+			var checkPos = Vector2((e.mousePosition.x - MenuBar.width + ShrunkX) - drawOffsetPosDest.x + ((theTex.width /2)*(drawOffsetScale-1)),   theTex.height - (e.mousePosition.y + ShrunkY - drawOffsetPosDest.y) + ((theTex.height /2)*(drawOffsetScale-1))) / drawOffsetScale;
+			var found = false;
+			for (var i = 0; i<Rects.Count; i++) {
+				//Check for sprite center
+				var SpriteCenterRect : Rect = Rect(Rects[i].rect.x + Rects[i].spritePivot.x-(7.0/drawOffsetScale), Rects[i].rect.y + Rects[i].spritePivot.y-(7.0/drawOffsetScale),(16.0/drawOffsetScale),(16.0/drawOffsetScale));
+				if (SpriteEditor && SpriteCenterRect.Contains(checkPos)){
+					found = true;
+					MovingRectOffset = checkPos - Vector2(SpriteCenterRect.x + (7.0/drawOffsetScale), SpriteCenterRect.y + (7.0/drawOffsetScale));
+					MovingSpriteCenter = true;
+					MovingAllSpriteCenterStart = Rects[i].spritePivot;
+					break;
+				}
+				
+				//Check for offset slider
+				if(Rects[i].Orient){
+					var SliderRect : Rect = Rect(Rects[i].rect.xMax - Rects[i].vOffset - (SliderSize/drawOffsetScale), Rects[i].rect.y, (SliderSize/drawOffsetScale)*2, Rects[i].rect.height);
+				} else {
+					SliderRect = Rect(Rects[i].rect.x, Rects[i].rect.yMax - Rects[i].vOffset - (SliderSize/drawOffsetScale), Rects[i].rect.width, (SliderSize/drawOffsetScale)*2);
+				}
+				if (!SpriteEditor && PerCharacterOffset && SliderRect.Contains(checkPos)){
+					found = true;
+					MovingRectOffset = checkPos - Vector2(SliderRect.x, SliderRect.y);
+					MovingSlider = true;
+					MovingAllSliderStart = Rects[i].vOffset;
+					break;
+				}
+				
+				//Check for Rects
+				if (Rects[i].rect.Contains(checkPos)){
+					found = true;
+					var ResizerRect = Rect(Rects[i].rect.xMax - 11.0/drawOffsetScale, Rects[i].rect.y,11.0/drawOffsetScale,11.0/drawOffsetScale);
+					if(ResizerRect.Contains(checkPos)){
+						ResizingRect = true;
+						ResizingRectOffset = checkPos - Vector2(Rects[i].rect.x+Rects[i].rect.width, Rects[i].rect.y);
+					} else {
+						MovingRect = true;
+						MovingRectOffset = checkPos - Vector2(Rects[i].rect.x, Rects[i].rect.y);
+					}
+					break;
+				}
+			}
+			
+			if(found){
+				ClickedRectInd = i;
+				GUI.FocusControl("");
+				GetFontInfoToGUI(Rects[i].CIIndex,(SpriteEditor?Rects[i].fontIndex:0));
+				ReFocusChar = true;
+				ClickedOnRect = true;
+			}
+		}
+		
+		
+		//Leftmouse HOLD, dragging something
+		if(e.type == EventType.MouseDrag && e.button == 0){
+			checkPos = Vector2((e.mousePosition.x - MenuBar.width + ShrunkX) - drawOffsetPosDest.x + ((theTex.width /2)*(drawOffsetScale-1)),   theTex.height - (e.mousePosition.y + ShrunkY - drawOffsetPosDest.y) + ((theTex.height /2)*(drawOffsetScale-1))) / drawOffsetScale;
+			
+			if(MovingSpriteCenter){//Moving a sprite center
+				if(MovingAllToggle){
+					switch (Snap){
+						case 0:
+							for (i = 0; i<Rects.Count; i++){
+								if(MovingAllSpriteToggle && Rects[i].fontIndex != Rects[ClickedRectInd].fontIndex){continue;}
+								Rects[i].spritePivot = Rects[i].spritePivot + Vector2((checkPos.x - MovingRectOffset.x) - Rects[ClickedRectInd].rect.x, (checkPos.y - MovingRectOffset.y) - Rects[ClickedRectInd].rect.y) - MovingAllSpriteCenterStart;
+								UpdateFont(i, Rects[i].CIIndex, Rects[i].fontIndex, false);
+							}
+							break;
+						case 1:
+							Rects[ClickedRectInd].spritePivot = Vector2((checkPos.x - MovingRectOffset.x) - Rects[ClickedRectInd].rect.x, (checkPos.y - MovingRectOffset.y) - Rects[ClickedRectInd].rect.y);
+							Rects[ClickedRectInd].spritePivot.x = Mathf.Clamp(Mathf.RoundToInt(Rects[ClickedRectInd].spritePivot.x / (Rects[ClickedRectInd].rect.width/2)) * (Rects[ClickedRectInd].rect.width/2),0,Rects[ClickedRectInd].rect.width);
+							Rects[ClickedRectInd].spritePivot.y = Mathf.Clamp(Mathf.RoundToInt(Rects[ClickedRectInd].spritePivot.y / (Rects[ClickedRectInd].rect.height/2)) * (Rects[ClickedRectInd].rect.height/2),0,Rects[ClickedRectInd].rect.height);
+							var snapVector = Vector2(0,0);
+							snapVector.x = Rects[ClickedRectInd].spritePivot.x / Rects[ClickedRectInd].rect.width;
+							snapVector.y = Rects[ClickedRectInd].spritePivot.y / Rects[ClickedRectInd].rect.height;
+							for (i = 0; i<Rects.Count; i++){
+								if(MovingAllSpriteToggle && Rects[i].fontIndex != Rects[ClickedRectInd].fontIndex){continue;}
+								if(i == ClickedRectInd){continue;}
+								Rects[i].spritePivot = Vector2(snapVector.x * Rects[i].rect.width, snapVector.y * Rects[i].rect.height);
+								UpdateFont(i, Rects[i].CIIndex, Rects[i].fontIndex, false);
+							}
+							break;
+						case 2:
+							for (i = 0; i<Rects.Count; i++){
+								if(MovingAllSpriteToggle && Rects[i].fontIndex != Rects[ClickedRectInd].fontIndex){continue;}
+								Rects[i].spritePivot = Rects[i].spritePivot + Vector2((checkPos.x - MovingRectOffset.x) - Rects[ClickedRectInd].rect.x, Rects[ClickedRectInd].spritePivot.y) - MovingAllSpriteCenterStart;
+								Rects[i].spritePivot = RoundedV2(Rects[i].spritePivot);
+								UpdateFont(i, Rects[i].CIIndex, Rects[i].fontIndex, false);
+							}
+							break;
+						case 3:
+							for (i = 0; i<Rects.Count; i++){
+								if(MovingAllSpriteToggle && Rects[i].fontIndex != Rects[ClickedRectInd].fontIndex){continue;}
+								Rects[i].spritePivot = Rects[i].spritePivot + Vector2(Rects[ClickedRectInd].spritePivot.x, (checkPos.y - MovingRectOffset.y) - Rects[ClickedRectInd].rect.y) - MovingAllSpriteCenterStart;
+								Rects[i].spritePivot = RoundedV2(Rects[i].spritePivot);
+								UpdateFont(i, Rects[i].CIIndex, Rects[i].fontIndex, false);
+							}
+							break;
+					}
+					MovingAllSpriteCenterStart = Rects[ClickedRectInd].spritePivot;
+				} else {
+					switch (Snap){
+						case 0:
+							Rects[ClickedRectInd].spritePivot = Vector2((checkPos.x - MovingRectOffset.x) - Rects[ClickedRectInd].rect.x, (checkPos.y - MovingRectOffset.y) - Rects[ClickedRectInd].rect.y);
+							break;
+						case 1:
+							Rects[ClickedRectInd].spritePivot = Vector2((checkPos.x - MovingRectOffset.x) - Rects[ClickedRectInd].rect.x, (checkPos.y - MovingRectOffset.y) - Rects[ClickedRectInd].rect.y);
+							Rects[ClickedRectInd].spritePivot.x = Mathf.Clamp(Mathf.RoundToInt(Rects[ClickedRectInd].spritePivot.x / (Rects[ClickedRectInd].rect.width/2)) * (Rects[ClickedRectInd].rect.width/2),0,Rects[ClickedRectInd].rect.width);
+							Rects[ClickedRectInd].spritePivot.y = Mathf.Clamp(Mathf.RoundToInt(Rects[ClickedRectInd].spritePivot.y / (Rects[ClickedRectInd].rect.height/2)) * (Rects[ClickedRectInd].rect.height/2),0,Rects[ClickedRectInd].rect.height);
+							break;
+						case 2:
+							Rects[ClickedRectInd].spritePivot = Vector2((checkPos.x - MovingRectOffset.x) - Rects[ClickedRectInd].rect.x, Rects[ClickedRectInd].spritePivot.y);
+							break;
+						case 3:
+							Rects[ClickedRectInd].spritePivot = Vector2(Rects[ClickedRectInd].spritePivot.x, (checkPos.y - MovingRectOffset.y) - Rects[ClickedRectInd].rect.y);
+							break;
+					}
+					if(Snap!=1){Rects[ClickedRectInd].spritePivot = RoundedV2(Rects[ClickedRectInd].spritePivot);}
+					UpdateFont(ClickedRectInd, Rects[ClickedRectInd].CIIndex, Rects[ClickedRectInd].fontIndex, true);
+				}
+			}
+			
+			if(MovingSlider){ //Moving an offset slider
+				if(MovingAllToggle){
+					for (i = 0; i<Rects.Count; i++){
+						if(Rects[ClickedRectInd].Orient){
+							Rects[i].vOffset = Rects[i].vOffset + (-(checkPos.x - Rects[ClickedRectInd].rect.xMax - MovingRectOffset.x + (SliderSize/drawOffsetScale)) - MovingAllSliderStart);
+						} else {
+							Rects[i].vOffset = Rects[i].vOffset + (-(checkPos.y - Rects[ClickedRectInd].rect.yMax - MovingRectOffset.y + (SliderSize/drawOffsetScale)) - MovingAllSliderStart);
+						}
+						UpdateFont(i, Rects[i].CIIndex, Rects[i].fontIndex, false);
+					}
+					MovingAllSliderStart = Rects[ClickedRectInd].vOffset;
+				} else {
+					switch (Snap){
+						case 1 : // SNAP
+							SnapFound = false;
+							for (i = 0; i<Rects.Count; i++) {
+								if(i == ClickedRectInd){continue;}
+								if (Rects[i].rect.Contains(checkPos)){//Find a snap, set offset for this rect, to offset of that rect
+									if(Rects[ClickedRectInd].Orient){
+										if(Rects[i].Orient){ //if Rect a is sideways, is rect b sideways too?
+											Rects[ClickedRectInd].vOffset = Rects[i].vOffset - Rects[i].rect.xMax + Rects[ClickedRectInd].rect.xMax;
+										} else {
+											Rects[ClickedRectInd].vOffset = Rects[i].vOffset;
+										}
+									} else {
+										if(Rects[i].Orient){ //if Rect a is upright, is rect b upright too?
+											Rects[ClickedRectInd].vOffset = Rects[i].vOffset;
+										} else {
+											Rects[ClickedRectInd].vOffset = Rects[i].vOffset - Rects[i].rect.yMax + Rects[ClickedRectInd].rect.yMax;
+										}
+									}
+									SnapFound = true;
+									break;
+								}
+							}
+							if(!SnapFound){//Couldnt find a snap target, apply non-snap, depending on orient
+								if(Rects[ClickedRectInd].Orient){
+									Rects[ClickedRectInd].vOffset = -(checkPos.x - Rects[ClickedRectInd].rect.xMax - MovingRectOffset.x + (SliderSize/drawOffsetScale));
+								} else {
+									Rects[ClickedRectInd].vOffset = -(checkPos.y - Rects[ClickedRectInd].rect.yMax - MovingRectOffset.y + (SliderSize/drawOffsetScale));
+								}
+							}
+							break;
+						default: // Other (no SNAP), depending on orient
+							if(Rects[ClickedRectInd].Orient){
+								Rects[ClickedRectInd].vOffset = -(checkPos.x - Rects[ClickedRectInd].rect.xMax - MovingRectOffset.x + (SliderSize/drawOffsetScale));
+							} else {
+								Rects[ClickedRectInd].vOffset = -(checkPos.y - Rects[ClickedRectInd].rect.yMax - MovingRectOffset.y + (SliderSize/drawOffsetScale));
+							}
+							break;
+					}
+					UpdateFont(ClickedRectInd, Rects[ClickedRectInd].CIIndex, Rects[ClickedRectInd].fontIndex, true);
+				}
+			}
+			
+			if(MovingRect || ResizingRect){ //Moving or resizing a rect
+				if(ResizingRect){
+					checkPos -= ResizingRectOffset;
+					var OldRect = Rects[ClickedRectInd].rect;
+					var OldMaxY = OldRect.y + OldRect.height;
+					var newHeight = Mathf.Max(OldMaxY - checkPos.y,2);
+					var newWidth = Mathf.Max(checkPos.x - OldRect.x,2);
+					var newY = Mathf.Min(checkPos.y,OldMaxY - 2);
+				}
+				switch (Snap){
+					case 0 : //NO SNAP#
+						if(MovingRect){Rects[ClickedRectInd].rect = Rect(checkPos.x - MovingRectOffset.x,checkPos.y - MovingRectOffset.y,Rects[ClickedRectInd].rect.width,Rects[ClickedRectInd].rect.height);}
+						if(ResizingRect){Rects[ClickedRectInd].rect = Rect(Rects[ClickedRectInd].rect.x,newY,newWidth,newHeight);}
+						break;
+					case 1 : // SNAP
+						if(MovingRect){Rects[ClickedRectInd].rect = SnapToPos(Rect(checkPos.x - MovingRectOffset.x,checkPos.y - MovingRectOffset.y,Rects[ClickedRectInd].rect.width,Rects[ClickedRectInd].rect.height),ClickedRectInd);}
+						if(ResizingRect){
+							if(!SnapFound){
+								Rects[ClickedRectInd].rect = SnapToSize(Rect(Rects[ClickedRectInd].rect.x,newY,newWidth,newHeight),ClickedRectInd);
+							} else if (!SnapRect.Contains(Event.current.mousePosition)){
+								SnapFound=false;
+							}
+						}
+						break;
+					case 2 : // CONSTRAIN TO X
+						if(MovingRect){Rects[ClickedRectInd].rect = Rect(checkPos.x - MovingRectOffset.x,Rects[ClickedRectInd].rect.y,Rects[ClickedRectInd].rect.width,Rects[ClickedRectInd].rect.height);}
+						if(ResizingRect){Rects[ClickedRectInd].rect = Rect(Rects[ClickedRectInd].rect.x,Rects[ClickedRectInd].rect.y,newWidth,Rects[ClickedRectInd].rect.height);}
+						break;
+					case 3 : // CONSTRAIN TO Y
+						if(MovingRect){Rects[ClickedRectInd].rect = Rect(Rects[ClickedRectInd].rect.x,checkPos.y - MovingRectOffset.y,Rects[ClickedRectInd].rect.width,Rects[ClickedRectInd].rect.height);}
+						if(ResizingRect){Rects[ClickedRectInd].rect = Rect(Rects[ClickedRectInd].rect.x,newY,Rects[ClickedRectInd].rect.width,newHeight);}
+						break;
+				}
+				Rects[ClickedRectInd].rect = RoundedRect(Rects[ClickedRectInd].rect);
+				UpdateFont(ClickedRectInd, Rects[ClickedRectInd].CIIndex, (SpriteEditor?Rects[ClickedRectInd].fontIndex:0), true);
+			}
+		}
+			
+			
+			
+
+		//Leftmouse Up, END ANY MOVE OR RESIZE
+		if(e.rawType == EventType.MouseUp && e.button == 0){
+			CheckOverlapRects();
+			MovingRect = false;
+			ResizingRect = false;
+			MovingSlider = false;
+			MovingSpriteCenter = false;
+		}
+		
+		//Rightmouse down, start drawOffset pan
+		if(e.type == EventType.MouseDown && (e.button == 2 || e.button == 1) && MouseOffGUI){
+			drawOffsetClick = true;
+			drawOffsetClickStartScreen = Event.current.mousePosition;
+		}
+		
+		//Right Mouseup from drawOffset move
+		if(e.type == EventType.MouseUp && (e.button == 2 || e.button == 1) && drawOffsetClick){
+			drawOffsetClick = false;
+		}
+		
+		//Dragging with rightmouse, update drawOffset pan
+		if(e.type == EventType.MouseDrag && (e.button == 2 || e.button == 1) && drawOffsetClick){
+			drawOffsetPosDest = drawOffsetPosDest + Event.current.delta;
+			drawOffsetPosDest = Vector2(Mathf.Clamp(drawOffsetPosDest.x, -(theTex.width /2) * drawOffsetScale, (theTex.width /2) * drawOffsetScale),
+										Mathf.Clamp(drawOffsetPosDest.y, -(theTex.height/2) * drawOffsetScale, (theTex.height/2) * drawOffsetScale));
+		}
+	}
+	
+	//Now GUI drawing, buttons, etc
+	
+	PromptOffset1 = Mathf.Lerp(PromptOffset1,PromptOffset1Dest,0.01);
+	PromptOffset2 = Mathf.Lerp(PromptOffset2,PromptOffset2Dest,0.01);
+	PromptOffset3 = Mathf.Lerp(PromptOffset3,PromptOffset3Dest,0.01);
+	PromptOffset4 = Mathf.Lerp(PromptOffset4,PromptOffset4Dest,0.01);
+	if(PromptOffset1 < 1.0 && PromptOffset1Dest == 0){MenuPrompt = false;}
+	if(PromptOffset2 < 1.0 && PromptOffset2Dest == 0){ResetPrompt = false;}
+	if(PromptOffset3 < 1.0 && PromptOffset3Dest == 0){AutoPrompt = false;}
+	if(PromptOffset4 < 1.0 && PromptOffset4Dest == 0){DialogStop = false;}
+	
+	GUI.skin = theGUISkin;
+	
+	//Draw Main Menu
+	if(UsingMenu){
+		GUI.Box(MenuBar,""); //////Left Box
+		GUI.BeginGroup(Rect(4,4,position.width-4,MenuBar.height-8));//Clip The Menu pics
+			GUI.DrawTexture(Rect(0,0,MenuPics[1].width, MenuPics[1].height),MenuPics[1]);
+		GUI.EndGroup();
+		GUI.Box(Rect(position.width - MenuBar.width,0,MenuBar.width,MenuBar.height),"");/////RightBox
+		GUI.BeginGroup(Rect(4,4,position.width - 4,MenuBar.height-8));//Clip The Menu pics
+			GUI.DrawTexture(Rect(position.width - 8 - MenuPics[2].width,0,MenuPics[2].width, MenuPics[2].height),MenuPics[2]);
+		GUI.EndGroup();
+		
+		GUI.skin = null;
+		GUI.BeginGroup(Rect(position.width - 140,10,130,200)); // Get tex and font for packer
+			if(SpriteEditor){
+				inFontContainer = EditorGUI.ObjectField(Rect(0,5,130,20),"Sprite In", inFontContainer, AnimatedSprite, false) as AnimatedSprite;
+				outFontContainer = EditorGUI.ObjectField(Rect(0,25,130,20),"Sprite Out", outFontContainer, AnimatedSprite, false) as AnimatedSprite;
+			} else {
+				inFont = EditorGUI.ObjectField(Rect(0,5,130,20),"Font In", inFont, Font, false) as Font;
+				outFont = EditorGUI.ObjectField(Rect(0,25,130,20),"Font Out", outFont, Font, false) as Font;
+			}
+			GUI.skin = theGUISkin;
+			GUI.enabled = ((!SpriteEditor && inFont!=null && outFont!=null && inFont != outFont) ||
+				(SpriteEditor && inFontContainer!= null && outFontContainer!= null && inFontContainer != outFontContainer));
+			if(GUI.Button(Rect(0,55,130,30),SpriteEditor?"Start SpritePacker":"Start FontPacker")){
+				Begin(SpriteEditor?3:2);
+			}
+		GUI.EndGroup();
+		
+		GUI.enabled = true;
+		GUI.skin = null;
+		GUI.BeginGroup(Rect(10,10,130,500)); // Get tex and font for setter
+			if(SpriteEditor){
+				EditorGUIUtility.LookLikeControls(40,80);
+				FontContainer = EditorGUI.ObjectField(Rect(0,5,130,20),"Sprite", FontContainer, AnimatedSprite, false) as AnimatedSprite;
+			} else {
+				EditorGUIUtility.LookLikeControls(40,80);
+				theFont = EditorGUI.ObjectField(Rect(0,5,130,20),"Font", theFont, Font, false) as Font;
+			}
+			GUI.skin = theGUISkin;
+			GUI.enabled = ((!SpriteEditor && theFont!=null) || (SpriteEditor && FontContainer!=null));
+			if(GUI.Button(Rect(0, 55, 130, 30),SpriteEditor?"Start SpriteSetter":"Start FontSetter")){
+				Begin(SpriteEditor?1:0);
+			}
+			GUI.enabled = true;
+			UsePreview = GUI.Toggle(Rect(0, 90, 130, 20),UsePreview, "Preview 3DText");
+		GUI.EndGroup();
+		
+		GUI.BeginGroup(Rect(4,position.height - 24,130,30)); // Switch to SpriteEditor
+			SpriteEditor = GUI.Toggle(Rect(0,0,130,20),SpriteEditor,"Sprite Mode");
+		GUI.EndGroup();
+		
+	
+	} //Enf of main menu
+	
+	
+	//Draw FontSetter
+	if(UsingEditor){
+		if(e.type == EventType.ValidateCommand && e.commandName == "UndoRedoPerformed"){
+			HarvestRects(0, true);
+		}
+		GUI.skin = theGUISkin;
+		GUI.Box(MenuBar,""); //////Left Box
+		GUI.BeginGroup(Rect(4,4,position.width-4,MenuBar.height-8));//Clip The Menu pics
+			GUI.DrawTexture(Rect(0,0,MenuPics[1].width, MenuPics[1].height),MenuPics[1]);
+		GUI.EndGroup();
+		GUI.Box(Rect(position.width-MenuBar.width,0,MenuBar.width,MenuBar.height),"");/////RightBox
+		GUI.BeginGroup(Rect(4,4,position.width-4,MenuBar.height-8));//Clip The Menu pics
+			GUI.DrawTexture(Rect(position.width-8-MenuPics[0].width,0,MenuPics[0].width, MenuPics[0].height),MenuPics[0]);
+		GUI.EndGroup();
+		GUI.enabled = !AutoSetDialog && !SpriteSetDialog;
+		
+		GUI.BeginGroup(Rect(position.width-140,10,130,80)); //Undo and shrinkwrap buttons
+			if(GUI.Button(Rect(0,0,130,30),"Undo")){
+				Undo.PerformUndo();
+			}
+			GUI.enabled = !AutoSetDialog && !SpriteSetDialog && Rects.Count > 0;
+			if(GUI.Button(Rect(10,40,110,25),"Shrinkwrap")){
+				ShrinkWrap();
+			}
+		GUI.EndGroup();
+		GUI.enabled = true;
+		GUI.BeginGroup(Rect(MenuBar.width,0,position.width-150,position.height));//Clip The Background Box
+			GUI.color = Color.gray;
+			GUI.skin = theGUISkin;
+			GUI.Box(Rect(0,0,position.width-300,position.height),"","White");
+			GUI.color = Color.white;
+		GUI.EndGroup();
+		
+		if(SpriteEditor && !SpriteSetDialog){
+			GUI.BeginGroup(Rect(position.width-MenuBar.width,100,MenuBar.width,200)); //Animation Properties group
+				GUI.Box(Rect(0,0,150,SpritePropertiesLoopBehaviour == 3?160:(SpritePropertiesLoopBehaviour == 2?120:140)),"");
+				GUI.Label(Rect(10,2,130,20),"Animation Properties:");
+				EditorGUIUtility.LookLikeControls(40,60);
+				SpritePropertiesFontIndex = EditorGUI.Popup(Rect(10,24,130,20),"Anim:",SpritePropertiesFontIndex,FontListNames);
+				SpritePropertiesLoopBehaviour = EditorGUI.EnumPopup(Rect(10,44,130,20),"Loop:",SpritePropertiesLoopBehaviour);
+				if(SpritePropertiesLoopBehaviour == 3){
+					EditorGUIUtility.LookLikeControls(70,60);
+					SpritePropertiesNextAnim = EditorGUI.Popup(Rect(10,64,130,20),"Change to:",SpritePropertiesNextAnim,FontListNames);
+				}
+				if(SpritePropertiesLoopBehaviour == 0 || SpritePropertiesLoopBehaviour == 1 || SpritePropertiesLoopBehaviour == 3){
+					EditorGUIUtility.LookLikeControls(105,60);
+					SpritePropertiesLoopStart = Mathf.Clamp(EditorGUI.IntField(Rect(10,SpritePropertiesLoopBehaviour == 3?84:64,130,18),SpritePropertiesLoopBehaviour == 3?"Starting at:":"Loop start frame:",SpritePropertiesLoopStart), 0, FontList[SpritePropertiesLoopBehaviour == 3?SpritePropertiesNextAnim:SpritePropertiesFontIndex].characterInfo.Length-2);
+				}
+				EditorGUIUtility.LookLikeControls(105,60);
+				SpritePropertiesAnimFPS = EditorGUI.FloatField(Rect(10,SpritePropertiesLoopBehaviour == 3?102:(SpritePropertiesLoopBehaviour == 2?62:82),130,18),"Anim FPS Multip:",SpritePropertiesAnimFPS);
+				AutoAnimate = GUI.Toggle(Rect(10,SpritePropertiesLoopBehaviour == 3?116:(SpritePropertiesLoopBehaviour == 2?76:96), 130,20),AutoAnimate,"Auto-animate");
+				GUI.Label(Rect(10,SpritePropertiesLoopBehaviour == 3?134:(SpritePropertiesLoopBehaviour == 2?94:114),30,20),""+SpriteFrame);
+				SpriteFrame = GUI.HorizontalSlider(Rect(28,SpritePropertiesLoopBehaviour == 3?140:(SpritePropertiesLoopBehaviour == 2?100:120), 112,18),SpriteFrame,0,FontList[SpritePropertiesFontIndex].characterInfo.Length-2);
+				
+				//if you switch auto on, go back to the start.
+				if(AutoAnimate != AutoAnimateOld){
+					AutoAnimateOld = AutoAnimate;
+					if(AutoAnimate == true){
+						SpriteFrame = 0;
+					}
+				}
+				
+				//choosing a new font needs to update the other fields
+				if(SpritePropertiesFontIndex != SpritePropertiesFontIndexOld){
+					ReFocusBlank = true;
+					SpritePropertiesFontIndexOld = SpritePropertiesFontIndex;
+					SpritePropertiesLoopBehaviour = FontList[SpritePropertiesFontIndex].characterInfo[0].index;
+					SpritePropertiesLoopBehaviourOld = SpritePropertiesLoopBehaviour;
+					SpritePropertiesNextAnim = FontList[SpritePropertiesFontIndex].characterInfo[0].uv.x;
+					SpritePropertiesNextAnimOld = SpritePropertiesNextAnim;
+					SpritePropertiesLoopStart = FontList[SpritePropertiesFontIndex].characterInfo[0].uv.y;
+					SpritePropertiesLoopStartOld = SpritePropertiesLoopStart;
+					SpritePropertiesAnimFPS = FontList[SpritePropertiesFontIndex].characterInfo[0].uv.width + 1.0;
+					SpritePropertiesAnimFPSOld = SpritePropertiesAnimFPS;
+					if(SpritePreview != null){
+						SpritePreviewT.font = FontList[SpritePropertiesFontIndex];
+					}
+					SpriteFrame = 0;
+					ClickedRectInd = FindFrame();
+					if(ClickedRectInd != -1){
+						GetFontInfoToGUI(Rects[ClickedRectInd].CIIndex, Rects[ClickedRectInd].fontIndex);
+					}
+
+				}
+				
+				//changing anim properties needs to change the font.CI[0]
+				if(SpritePropertiesLoopBehaviour != SpritePropertiesLoopBehaviourOld){
+					SpritePropertiesLoopBehaviourOld = SpritePropertiesLoopBehaviour;
+					var SO = new SerializedObject(FontList[SpritePropertiesFontIndex]);
+					var p = SO.FindProperty("m_CharacterRects.Array");
+					p = p.GetArrayElementAtIndex(0);
+					p = p.FindPropertyRelative("index");
+					p.intValue = SpritePropertiesLoopBehaviour;
+					SO.ApplyModifiedProperties();
+				}
+				
+				if(SpritePropertiesNextAnim != SpritePropertiesNextAnimOld){
+					SpritePropertiesNextAnimOld = SpritePropertiesNextAnim;
+					SO = new SerializedObject(FontList[SpritePropertiesFontIndex]);
+					p = SO.FindProperty("m_CharacterRects.Array");
+					p = p.GetArrayElementAtIndex(0);
+					p = p.FindPropertyRelative("uv");
+					p.rectValue.x = SpritePropertiesNextAnim;
+					SO.ApplyModifiedProperties();
+				}
+				
+				if(SpritePropertiesLoopStart != SpritePropertiesLoopStartOld){
+					SpritePropertiesLoopStartOld = SpritePropertiesLoopStart;
+					SO = new SerializedObject(FontList[SpritePropertiesFontIndex]);
+					p = SO.FindProperty("m_CharacterRects.Array");
+					p = p.GetArrayElementAtIndex(0);
+					p = p.FindPropertyRelative("uv");
+					p.rectValue.y = SpritePropertiesLoopStart;
+					SO.ApplyModifiedProperties();
+				}
+				
+				if(SpritePropertiesAnimFPS != SpritePropertiesAnimFPSOld){
+					SpritePropertiesAnimFPSOld = SpritePropertiesAnimFPS;
+					SO = new SerializedObject(FontList[SpritePropertiesFontIndex]);
+					p = SO.FindProperty("m_CharacterRects.Array");
+					p = p.GetArrayElementAtIndex(0);
+					p = p.FindPropertyRelative("uv");
+					p.rectValue.width = SpritePropertiesAnimFPS - 1.0;
+					SO.ApplyModifiedProperties();
+				}
+				
+				if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Period && MouseOffGUI && !AutoAnimate) {
+						SpriteFrame++;
+				}
+				
+				if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Comma && MouseOffGUI && !AutoAnimate) {
+						SpriteFrame--;
+				}
+				
+				if(SpriteFrame != SpriteFrameOld && !AutoAnimate && SpritePreview != null){
+					if(SpriteFrame < 0){SpriteFrame = FontList[SpritePropertiesFontIndex].characterInfo.Length-2;}
+					if(SpriteFrame > FontList[SpritePropertiesFontIndex].characterInfo.Length-2){SpriteFrame = 0;}
+					SpriteFrameOld = SpriteFrame;
+					var C:char = SpriteFrame+33;
+					SpritePreviewT.text = "" + C;
+					ClickedRectInd = FindFrame();
+					if(ClickedRectInd != -1){
+						GetFontInfoToGUI(Rects[ClickedRectInd].CIIndex, Rects[ClickedRectInd].fontIndex);
+					}
+				}
+			GUI.EndGroup();
+			
+			
+			
+		}
+		
+		GUI.enabled = (!AutoSetDialog && !SpriteSetDialog && !AutoPrompt && !MenuPrompt);
+		GUI.BeginGroup(Rect(position.width-MenuBar.width+10,position.height - 150 - PromptOffset1,MenuBar.width-10,150)); //RESET Group
+			GUI.BeginGroup(Rect(0,30-PromptOffset2,130,30)); //RESET Group
+				if(ResetPrompt){
+					if(GUI.Button(Rect(0,0,60,30),"Reset")){
+						ResetFont(-1);
+						PromptOffset2Dest = 0;
+						ResetPrompt = false;
+					}
+					if(GUI.Button(Rect(70,0,60,30),"Cancel")){
+						PromptOffset2Dest = 0;
+					}
+				}
+			GUI.EndGroup();
+			if(GUI.Button(Rect(0,31,130,30),"Reset Font")){
+				PromptOffset2Dest = 30;
+				PromptOffset1Dest = 0;
+				MenuPrompt = false;
+				AutoPrompt = false;
+				ResetPrompt = true;
+			}
+		GUI.EndGroup();
+		
+		GUI.enabled = (!AutoSetDialog && !SpriteSetDialog && !ResetPrompt && !MenuPrompt);
+		GUI.BeginGroup(Rect(position.width-MenuBar.width+10,position.height - 230 - PromptOffset1 - PromptOffset2,MenuBar.width-10,200)); //AUTO Group
+			GUI.BeginGroup(Rect(0,71-PromptOffset3,130,PromptOffset3)); //AUTO Group
+				if(AutoPrompt){
+					if(!SpriteEditor){
+						if(GUI.Button(Rect(0,45,60,25),"Basic")){
+							ResetFont(-1);
+							AutoSet();
+							AutoPrompt = false;
+						}
+						if(GUI.Button(Rect(0,10,60,25),"Smart")){
+							SmartMode = true;
+							ResetFont(-1);
+							AutoSet();
+							AutoPrompt = false;
+						}
+					} else {
+						if(GUI.Button(Rect(0,0,60,28),"Auto!")){
+							ResetFont(-1);
+							AutoSet();
+							AutoPrompt = false;
+						}
+						
+						if(GUI.Button(Rect(0,29,60,20),"Get Piv")){
+							LocatePivots();
+							if(ClickedRectInd!=-1){GetFontInfoToGUI(Rects[ClickedRectInd].CIIndex, Rects[ClickedRectInd].fontIndex);}
+							PromptOffset3Dest = 0;
+						}
+						
+						if(GUI.Button(Rect(0,50,60,20),"Draw Piv")){
+							DrawSpritePivots();
+						}
+					}
+					
+					GUI.Label(Rect(63,0,150,20),SpriteEditor?"Pivot Color:":"SmartColor:");
+					SmartColor = EditorGUI.ColorField(Rect(71,20,60,20),SmartColor);
+					
+					if(GUI.Button(Rect(70,45,60,25),"Cancel")){
+						PromptOffset3Dest = 0;
+					}
+				}
+			GUI.EndGroup();
+			if(GUI.Button(Rect(0,71,130,30),"Auto Set")){
+				PromptOffset1Dest = 0;
+				PromptOffset2Dest = 0;
+				PromptOffset3Dest = 71;
+				AutoPrompt = true;
+				ResetPrompt = false;
+				MenuPrompt = false;
+			}
+		GUI.EndGroup();
+		GUI.enabled = true;
+		
+		GUI.BeginGroup(Rect(position.width-MenuBar.width+10,position.height - 80 - PromptOffset1,MenuBar.width,150)); //ResetCam Group
+			if(GUI.Button(Rect(0,0,130,30),"Reset View")){
+				drawOffsetPosDest = Vector2(0,0);
+				drawOffsetScaleDest = 1.0;
+			}
+		GUI.EndGroup();
+		
+		GUI.enabled = (!AutoSetDialog && !SpriteSetDialog && !ResetPrompt && !AutoPrompt);
+		GUI.BeginGroup(Rect(position.width-MenuBar.width+10,position.height - 70,MenuBar.width,150)); //Back to menu Group
+			GUI.BeginGroup(Rect(0,30-PromptOffset1,130,150)); //Back to menu Group
+				if(MenuPrompt){
+					if(GUI.Button(Rect(0,0,60,30),"Return")){
+						UsingEditor = false;
+						UsingMenu = true;
+						ResetError();
+						MenuPrompt = false;
+						PromptOffset1Dest = 0;
+						position = Rect(position.x, position.y - 5, 512, position.height);
+					}
+					if(GUI.Button(Rect(70,0,60,30),"Cancel")){
+						PromptOffset1Dest = 0;
+					}
+				}
+			GUI.EndGroup();
+			if(GUI.Button(Rect(0,31,130,30),"Return to Menu")){
+				PromptOffset1Dest = 30;
+				PromptOffset2Dest = 0;
+				MenuPrompt = true;
+				AutoPrompt = false;
+				ResetPrompt = false;
+			}
+		GUI.EndGroup();
+		
+		GUI.skin = theGUISkin;
+		GUI.enabled = !AutoSetDialog && !SpriteSetDialog;
+		GUI.BeginGroup(Rect(MenuBar.width,0,(position.width-300),position.height)); //clip the Tex
+			GUI.color = BGCol; //Draw a box for the background.
+			GUI.Box(Rect(drawOffsetPos.x - ShrunkX - (theTex.width/2 * (drawOffsetScale-1))- 6, drawOffsetPos.y - ShrunkY - (theTex.height/2 * (drawOffsetScale-1)) - 6, 12 + theTex.width * drawOffsetScale, 12 + theTex.height * drawOffsetScale),"","theTexBG");
+			GUI.color = Color.white;//Draw the fonts texture
+			GUI.DrawTexture(Rect(drawOffsetPos.x - ShrunkX - (theTex.width/2 * (drawOffsetScale-1)), drawOffsetPos.y - ShrunkY - (theTex.height/2 * (drawOffsetScale-1)), theTex.width * drawOffsetScale, theTex.height * drawOffsetScale),theTex);
+		GUI.EndGroup();
+		
+		GUI.BeginGroup(Rect(MenuBar.width,0,position.width-300,position.height));//Clip The Rects
+		for (i = 0; i<Rects.Count; i++){
+			if(RectOnScreen(ConvertPixelsToScreen(Rects[i].rect))){
+				var ScreenRect = ConvertPixelsToScreen(Rects[i].rect);
+				GUI.Box(ScreenRect,"",i == ClickedRectInd?"EmptyBoxSelected":"EmptyBox"); //draw a rect for each character
+				if(PerCharacterOffset){
+					if(Rects[i].Orient){
+						var SliderBox : Rect = Rect(Rects[i].rect.xMax - Rects[i].vOffset - (SliderSize/drawOffsetScale), Rects[i].rect.y, (SliderSize/drawOffsetScale)*2, Rects[i].rect.height);
+					} else {
+						SliderBox = Rect(Rects[i].rect.x, Rects[i].rect.yMax - Rects[i].vOffset - (SliderSize/drawOffsetScale), Rects[i].rect.width, (SliderSize/drawOffsetScale)*2);
+					}
+					GUI.Box(ConvertPixelsToScreen(SliderBox),"","GuideLine"); //draw the slider for each rect
+				}
+				if(SpriteEditor){
+					//draw the sprite pivot, and 2 labels for the sprite index
+					GUI.Box(ConvertPixelsToScreen(Rect(Rects[i].rect.x + Rects[i].spritePivot.x-(7.0/drawOffsetScale), Rects[i].rect.y + Rects[i].spritePivot.y-(7.0/drawOffsetScale),16.0/drawOffsetScale,16.0/drawOffsetScale)),"",i == ClickedRectInd?"SpritePivotSelected":"SpritePivot");
+					GUI.Label(Rect(ScreenRect.x+1,ScreenRect.y+1,ScreenRect.width,ScreenRect.height),""+(FontList[Rects[i].fontIndex].characterInfo[Rects[i].CIIndex].index-33),"RectLabel2");
+					GUI.color = Colors[Rects[i].fontIndex % Colors.Length];
+					GUI.Label(ScreenRect,""+(FontList[Rects[i].fontIndex].characterInfo[Rects[i].CIIndex].index-33),"RectLabel");
+					GUI.color = Color.white;
+				} else {
+					//draw 2 labels for the character
+					GUI.Label(Rect(ScreenRect.x+1,ScreenRect.y+1,ScreenRect.width,ScreenRect.height),""+(FontList[0].characterInfo[Rects[i].CIIndex].index) cast char,"RectLabel2");
+					GUI.Label(ScreenRect,""+(FontList[0].characterInfo[Rects[i].CIIndex].index) cast char,"RectLabel");
+				}
+			}
+		}
+		GUI.EndGroup();
+		
+		if(AutoSetDialog || SpriteSetDialog){
+			GUI.BeginGroup(Rect(MenuBar.width,0,position.width-300,position.height));//Clip The Auto Rects
+				GUI.enabled = true;
+				GUI.Box(ConvertPixelsToScreen(AutoRectList[AutoSetIndex].rect),"","AutoBox");
+			GUI.EndGroup();
+		}
+		
+		
+		GUI.BeginGroup(Rect(10,6,MenuBar.width-10,65)); //Size Group
+			GUI.Label(Rect(0,0,140,40),SpriteEditor?"Number of \nsprites:":"Number of\ncharacters:");
+			GUI.enabled = false;
+			CharCount = EditorGUI.IntField(Rect(80,9,40,20),CharCount,"TextField");
+			GUI.enabled = !AutoSetDialog && !SpriteSetDialog;
+			
+			if(GUI.Button(Rect(0,42,50,20),"+1")){
+				Undo.CreateSnapshot();
+				Undo.RegisterSnapshot();
+				GUI.FocusControl("");
+				SO = new SerializedObject(FontList[RectFontIndex]);
+				p = SO.FindProperty("m_CharacterRects.Array.size");
+				WidBefore = 0;
+				WidBeforeOld = 0;
+				WidAfter = 0;
+				WidAfterOld = 0;
+				Orient = 0;
+				OrientOld = 0;
+				SpriteIndex++;
+				SpriteIndexOld = SpriteIndex;
+				CharCount = CharCount+1;
+				p.intValue++;
+				SO.ApplyModifiedProperties();
+				if(ClickedRectInd == -1){
+					var newSetRect = new SetRect();
+					newSetRect.rect = Rect(0,0,100,100);
+				} else {
+					newSetRect = new SetRect(Rects[ClickedRectInd]);
+				}
+				newSetRect.CIIndex = FontList[newSetRect.fontIndex].characterInfo.Length-1;
+				Rects.Add(newSetRect);
+				ClickedRectInd = CharCount-1;
+				ClickedOnRect = true;
+				var newChar : char = ChrL+1;
+				ChrStr = ""+newChar;
+				ChrL++;
+				UpdateFont(ClickedRectInd, Rects[ClickedRectInd].CIIndex,(SpriteEditor?Rects[ClickedRectInd].fontIndex:0), true);
+				if(SpriteEditor){
+					CheckSprites();
+				} else {
+					CheckDupeChars();
+				}
+				if(Rects.Count == 1){CameraOnRect(Rects[Rects.Count-1].rect);}
+			}
+			GUI.enabled = ClickedOnRect && !AutoSetDialog && !SpriteSetDialog && ClickedRectInd>-1;
+			
+			if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Delete && ClickedRectInd!=-1 && MouseOffGUI) {
+				RemoveRect();
+			}
+			
+			if(GUI.Button(Rect(60,42,70,20),"Remove")){
+				Undo.CreateSnapshot();
+				Undo.RegisterSnapshot();
+				RemoveRect();
+			}
+			
+		GUI.EndGroup(); // End Size Set group
+		
+		GUI.BeginGroup(Rect(0,80,MenuBar.width,200)); //Rect properties group
+			GUI.Box(Rect(0,0,150,SpriteEditor?192:142),"");
+			GUI.Label(Rect(10,2,140,20),SpriteEditor?"Sprite Properties:":"Character Properties:");
+			GUI.Label(Rect(33,23,140,20),SpriteEditor?"":"Character:");
+			GUI.SetNextControlName("CharacterEntry");
+			if(SpriteEditor){
+				EditorGUIUtility.LookLikeControls(83,25);
+				SpriteIndex = Mathf.Max(EditorGUI.IntField(Rect(15,23,128,20), "Sprite Index:", SpriteIndex, "TextField"),0);
+				if(ClickedRectInd>-1 && (SpriteIndex != SpriteIndexOld) && !AutoSetDialog && !SpriteSetDialog){
+					SpriteIndexOld = SpriteIndex;
+					ChrL = SpriteIndex + 33;
+					UpdateFont(ClickedRectInd, Rects[ClickedRectInd].CIIndex,(SpriteEditor?Rects[ClickedRectInd].fontIndex:0), true);
+					CheckSprites();
+				}
+			} else {
+				ChrStr = EditorGUI.TextField(Rect(98,23,45,20),"",ChrStr,"TextField");
+				if(ChrStr.Length!=0 && ChrL != ChrStr[0] && !AutoSetDialog && !SpriteSetDialog && ClickedRectInd!=-1){
+					ChrL = ChrStr[0];
+					UpdateFont(ClickedRectInd, Rects[ClickedRectInd].CIIndex,(SpriteEditor?Rects[ClickedRectInd].fontIndex:0), true);
+					CheckDupeChars();
+				}
+			}
+			
+			EditorGUIUtility.LookLikeControls(20,25);
+			UVx = EditorGUI.IntField(Rect(10,50,65,20),"X:",UVx,"TextField");
+			UVy = EditorGUI.IntField(Rect(78,50,65,20),"Y:",UVy,"TextField");
+			UVw = EditorGUI.IntField(Rect(10,70,65,20),"W:",UVw,"TextField");
+			UVh = EditorGUI.IntField(Rect(78,70,65,20),"H:",UVh,"TextField");
+			
+			if(UVRect != Rect(UVx,UVy,UVw,UVh) && !AutoSetDialog && !SpriteSetDialog){
+				UVRect = Rect(UVx,UVy,UVw,UVh);
+				Rects[ClickedRectInd].rect = UVRect;
+				UpdateFont(ClickedRectInd, Rects[ClickedRectInd].CIIndex,(SpriteEditor?Rects[ClickedRectInd].fontIndex:0), true);
+			}
+			
+			if(SpriteEditor){
+				GUI.Label(Rect(12,95,100,60),"Sprite Pivot:");
+				EditorGUIUtility.LookLikeControls(20,25);
+				Cx = EditorGUI.FloatField(Rect(10,115,65,20),"X:",Cx,"TextField");
+				Cy = EditorGUI.FloatField(Rect(78,115,65,20),"Y:",Cy,"TextField");
+				
+				if(CPos != Vector2(Cx,Cy) && !AutoSetDialog && !SpriteSetDialog){
+					CPos = Vector2(Cx,Cy);
+					Rects[ClickedRectInd].spritePivot = CPos;
+					UpdateFont(ClickedRectInd, Rects[ClickedRectInd].CIIndex,(SpriteEditor?Rects[ClickedRectInd].fontIndex:0), true);
+				}
+			
+				EditorGUIUtility.LookLikeControls(40,60);
+				RectFontIndex = EditorGUI.Popup(Rect(10,145,130,20),"Font:",RectFontIndex,FontListNames);
+				
+				//change the font index outside of autoset
+				if(RectFontIndex != RectFontIndexOld && !AutoSetDialog && !SpriteSetDialog && Rects.Count>1){
+					var CI = FontList[RectFontIndexOld].characterInfo[Rects[ClickedRectInd].CIIndex];
+					SO = new SerializedObject(FontList[RectFontIndexOld]);
+					p = SO.FindProperty("m_CharacterRects.Array");
+					p.DeleteArrayElementAtIndex(Rects[ClickedRectInd].CIIndex); //Delete the CI from the old font
+					SO.ApplyModifiedProperties();
+					for(i = 0; i<Rects.Count; i++){ //Shift down all the CIindex for all rects in this font
+						if(Rects[i].fontIndex == RectFontIndexOld && Rects[i].CIIndex > Rects[ClickedRectInd].CIIndex){
+							Rects[i].CIIndex--;
+						}
+					}
+					SO = new SerializedObject(FontList[RectFontIndex]);
+					p = SO.FindProperty("m_CharacterRects.Array.size");
+					p.intValue = FontList[RectFontIndex].characterInfo.Length + 1; //Expand the new font to accomodate the CI
+					p = SO.FindProperty("m_CharacterRects.Array");
+					var p2 = p.GetArrayElementAtIndex(FontList[RectFontIndex].characterInfo.Length); //Set all the values from the CI
+					p2.Next(true); //p2 is now CharIndex
+					p2.intValue = CI.index;
+					p2.Next(false); //p2 is now UV Rect
+					p2.rectValue = CI.uv;
+					p2.Next(false); //p2 is now Vert Rect
+					p2.rectValue = CI.vert;
+					p2.Next(false); //p2 is now Width
+					p2.floatValue = CI.width;
+					p2.Next(false); //p2 is now Flip bool
+					p2.boolValue = CI.flipped;
+					SO.ApplyModifiedProperties();
+					
+					Rects[ClickedRectInd].fontIndex = RectFontIndex;
+					Rects[ClickedRectInd].CIIndex = FontList[RectFontIndex].characterInfo.Length-1;
+					UpdateFont(ClickedRectInd, Rects[ClickedRectInd].CIIndex,(SpriteEditor?Rects[ClickedRectInd].fontIndex:0), true);
+					RectFontIndexOld = RectFontIndex;
+					CheckSprites();
+				}
+				
+				//change the font index during autoset
+				if(RectFontIndex != RectFontIndexOld && !AutoSetDialog && SpriteSetDialog){
+					SpriteIndex = FontList[RectFontIndex].characterInfo.Length-1;
+					RectFontIndexOld = RectFontIndex;
+				}
+				
+				GUI.enabled = ErrorMsg[Errors.DupeSprite] || ErrorMsg[Errors.SkipSprite];
+				if(GUI.Button(Rect(50,165,90,18),"Fix Indices")){
+					var missing = CheckSprites(Rects[ClickedRectInd].fontIndex);
+					while (missing != -1){
+						for (i=0; i<Rects.Count; i++){
+							if(Rects[i].fontIndex == Rects[ClickedRectInd].fontIndex){
+								if(
+								(ErrorMsg[Errors.DupeSprite] && missing != i && FontList[Rects[ClickedRectInd].fontIndex].characterInfo[Rects[i].CIIndex].index >= FontList[Rects[ClickedRectInd].fontIndex].characterInfo[Rects[missing].CIIndex].index) || 
+								(ErrorMsg[Errors.SkipSprite] && 				FontList[Rects[ClickedRectInd].fontIndex].characterInfo[Rects[i].CIIndex].index-33 > missing)){
+									SO = new SerializedObject(FontList[Rects[ClickedRectInd].fontIndex]);
+									p = SO.FindProperty("m_CharacterRects.Array");
+									p2 = p.GetArrayElementAtIndex(Rects[i].CIIndex);
+									p2.Next(true); //p2 is now CharIndex
+									p2.intValue += DupeMissOffset;
+									SO.ApplyModifiedProperties();
+								}
+							}
+						}
+						missing = CheckSprites(Rects[ClickedRectInd].fontIndex);
+					}
+					GetFontInfoToGUI(Rects[ClickedRectInd].CIIndex,Rects[ClickedRectInd].fontIndex);
+				}
+			} else {
+				EditorGUIUtility.LookLikeControls(88,25);
+				WidBefore = EditorGUI.FloatField(Rect(10,95,133,20),"Leading Width:",WidBefore,"TextField");
+				WidAfter = EditorGUI.FloatField(Rect(10,115,133,20),"Trailing Width:",WidAfter,"TextField");
+			
+				if(WidBefore != WidBeforeOld && !AutoSetDialog && !SpriteSetDialog){
+					WidBeforeOld = WidBefore;
+					Rects[ClickedRectInd].bWidth = WidBefore;
+					UpdateFont(ClickedRectInd, Rects[ClickedRectInd].CIIndex,(SpriteEditor?Rects[ClickedRectInd].fontIndex:0), true);
+				}
+				
+				if(WidAfter != WidAfterOld && !AutoSetDialog && !SpriteSetDialog){
+					WidAfterOld = WidAfter;
+					Rects[ClickedRectInd].aWidth = WidAfter;
+					UpdateFont(ClickedRectInd, Rects[ClickedRectInd].CIIndex,(SpriteEditor?Rects[ClickedRectInd].fontIndex:0), true);
+				}
+			}
+		GUI.EndGroup(); // End Rect properties group
+		
+		if(!SpriteEditor){
+			GUI.enabled = !PerCharacterOffset && !AutoSetDialog;
+			if(GUI.Button(Rect(10,230,130,35),"Use Per-Character\nVertical Offsets")){
+				for (i = 0; i<Rects.Count; i++){
+					SO = new SerializedObject(FontList[0]);
+					p = SO.FindProperty("m_CharacterRects");
+					p.Next(true);
+					p2 = p.GetArrayElementAtIndex(i);
+					p2.Next(true); //p2 is now CharIndex
+					p2.Next(false); //p2 is now UV Rect
+					p2.Next(false); //p2 is now Vert Rect
+					Rects[i].vOffset = p2.rectValue.y;
+				}
+				PerCharacterOffset=true;
+			}
+		}
+		
+		GUI.BeginGroup(Rect(10,270,MenuBar.width-10,150)); //Snaps Group
+			GUI.Label(Rect(0,0,100,20),"Snap:");
+			GUI.enabled = ClickedOnRect && !AutoSetDialog && !SpriteSetDialog && ClickedRectInd>-1;
+			Snap = GUI.SelectionGrid(Rect(0,20,130,40),Snap, Snaps,2);
+		GUI.EndGroup();
+		
+		GUI.BeginGroup(Rect(0,330,150,250)); //Orientation buttons
+			GUI.Label(Rect(10,0,130,20),"Character Orientation:");
+			Orient = GUI.SelectionGrid(Rect(11,20,128,64),Orient,OrientPics,2,"BlankButton");
+			
+			if(Orient != OrientOld && !AutoSetDialog && !SpriteSetDialog){
+				OrientOld = Orient;
+				Rects[ClickedRectInd].Orient = (Orient == 1);
+				UpdateFont(ClickedRectInd, Rects[ClickedRectInd].CIIndex,(SpriteEditor?Rects[ClickedRectInd].fontIndex:0), true);
+			}
+		GUI.EndGroup();
+		
+		GUI.BeginGroup(Rect(0,417,150,250)); //interface toggles
+			GUI.Label(Rect(30,0,130,40),SpriteEditor?"Move all\nsprite pivots":"Move all\nvertical offsets");
+			MovingAllToggle = GUI.Toggle(Rect(10,6,130,20),MovingAllToggle,"");
+			if(MovingAllToggle && SpriteEditor){
+				MovingAllSpriteToggle = GUI.Toggle(Rect(10,32,130,20),MovingAllSpriteToggle,"Only this anim");
+			}
+		GUI.EndGroup();
+		
+		GUI.enabled = true;
+		
+		GUI.BeginGroup(Rect(0,position.height - 40,MenuBar.width,50)); //BGCol Group
+			GUI.Label(Rect(10,0,130,40),"Background\ncolor:");
+			BGCol = EditorGUI.ColorField(Rect(90,8,50,20),BGCol);
+		GUI.EndGroup();
+		
+		if(AutoSetDialog){//AutoSet Dialog
+			GUI.BeginGroup(Rect(position.width-150,position.height/2.0-120,150,200)); //Clip AUTOSET Dialog
+				GUI.Box(Rect(0,0,150,135+PromptOffset4),"");
+				GUI.Label(Rect(10,10,140,20),"What character is this?");
+				if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Return && AutoSetCharStr.Length>0 && GUI.GetNameOfFocusedControl()=="AutoText") {
+					AddRect(false,0);
+				}
+				if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape && GUI.GetNameOfFocusedControl()=="AutoText") {
+					SkipRect();
+				}
+				GUI.SetNextControlName("AutoText");
+				AutoSetCharStr = EditorGUI.TextField(Rect(55,30,40,21),"",AutoSetCharStr,"TextField");
+				GUI.enabled= AutoSetCharStr.Length>0;
+				if(GUI.Button(Rect(10,55,60,30),"Next")){
+					AddRect(false,0);
+				}
+				GUI.enabled = true;
+				if(GUI.Button(Rect(80,55,60,30),"Skip")){
+					SkipRect();
+				}
+			GUI.BeginGroup(Rect(10,90+PromptOffset4,130,30)); //stop AUTOSET Dialog
+				if(DialogStop){
+					if(GUI.Button(Rect(0,0,60,30),"Stop")){
+						PromptOffset4Dest = 0;
+						EndAutoSet();
+						AutoRectList.Clear();
+					}
+					if(GUI.Button(Rect(70,0,60,30),"Cancel")){
+						PromptOffset4Dest = 0;
+					}
+				}
+			GUI.EndGroup();
+				if(GUI.Button(Rect(10,90,130,30),"Stop Auto Set")){
+					DialogStop = true;
+					PromptOffset4Dest = 30;
+				}
+				if(CharRepeatList.Count>1 && AutoSetIndex == 0){
+					if(GUI.Button(Rect(30,135+PromptOffset4,90,20),"Repeat Last")){
+						RepeatSetting = true;
+						for (i = 0; i<CharRepeatList.Count; i++){
+							if(CharRepeatList[i] == 0){
+								AutoRectList.RemoveAt(AutoSetIndex);
+								AutoSetCharStr = "";
+							} else {
+								AutoSetCharStr = "" + CharRepeatList[i];
+								AddRect(false,0);
+							}
+						}
+						RepeatSetting = false;
+						EndAutoSet();
+					}
+				}
+			GUI.FocusControl("AutoText");
+			GUI.EndGroup();
+		}
+		
+		if(ErrorMsg[Errors.Spacebar]){
+			GUI.BeginGroup(Rect(position.width-MenuBar.width,100,MenuBar.width,200));//SPACEBAR Prompt
+				GUI.Box(Rect(0,0,150,61),"");
+				GUI.Label(Rect(10,4,135,60),"Don't forget to add a Rect for the Spacebar character!");
+				if(GUI.Button(Rect(96,39,50,18),"OK")){
+					ErrorMsg[Errors.Spacebar] = false;
+				}
+			GUI.EndGroup();
+		}
+		
+		if(ErrorMsg[Errors.SkipSprite]){
+			GUI.BeginGroup(Rect(position.width-MenuBar.width-(ErrorMsg[Errors.OverlapSprite]?323:169),position.height-43,170,43));//Skipped Sprite
+				GUI.Box(Rect(0,0,170,43),"");
+				SplitError = SkipErrorString.Split("#"[0]);
+				GUI.color = Colors[parseInt(SplitError[0])];
+				GUI.Label(Rect(6,5,160,60),SplitError[1],"RectLabel");
+				GUI.color = Color.white;
+				GUI.Label(Rect(10,19,160,60),SplitError[2]);
+			GUI.EndGroup();
+		}
+		
+		if(ErrorMsg[Errors.DupeSprite]){
+			GUI.BeginGroup(Rect(position.width-MenuBar.width-(ErrorMsg[Errors.OverlapSprite]?308:154),position.height-57,170,57));//Duped Sprite
+				GUI.Box(Rect(0,0,155,57),"");
+				SplitError = DupeErrorString.Split("#"[0]);
+				GUI.Label(Rect(10,4,150,60),""+SplitError[0]);
+				GUI.color = Colors[parseInt(SplitError[1])];
+				GUI.Label(Rect(6,20,150,60),""+SplitError[2],"RectLabel");
+				GUI.color = Color.white;
+				GUI.Label(Rect(10,34,150,60),""+SplitError[3]);
+			GUI.EndGroup();
+		}
+		
+		if(ErrorMsg[Errors.OverlapSprite]){
+			GUI.BeginGroup(Rect(position.width - MenuBar.width - 154, position.height - 80, 170, 80));//Overlapping Sprite
+				GUI.Box(Rect(0,0,155,80),"");
+				SplitError = OverlapErrorString.Split("#"[0]);
+				GUI.Label(Rect(10,4,150,30),"The Rect for");
+				GUI.color = Colors[parseInt(SplitError[0])];
+				
+				if (GUI.Button(Rect(4, 22, 147, 18), SplitError[1])) {
+					ClickedRectInd = SecondOverlapRect;
+					ReFocusBlank = true;
+					CameraOnRect(Rects[ClickedRectInd].rect);
+					GetFontInfoToGUI(Rects[ClickedRectInd].CIIndex, (SpriteEditor ? Rects[ClickedRectInd].fontIndex : 0));
+				}
+
+				GUI.color = Color.white;
+				GUI.Label(Rect(10,39,150,30),"overlaps with");
+				GUI.color = Colors[parseInt(SplitError[2])];
+				
+				if (GUI.Button(Rect(4, 58, 147, 18), SplitError[3])) {
+					ClickedRectInd = FirstOverlapRect;
+					ReFocusBlank = true;
+					CameraOnRect(Rects[ClickedRectInd].rect);
+					GetFontInfoToGUI(Rects[ClickedRectInd].CIIndex, (SpriteEditor ? Rects[ClickedRectInd].fontIndex : 0));
+				}
+
+				GUI.color = Color.white;
+			GUI.EndGroup();
+		}
+		
+		if(ErrorMsg[Errors.DupeChar]){
+			GUI.BeginGroup(Rect(position.width - MenuBar.width - 129, position.height - 60, 130, 60));//Duped Character
+				GUI.Box(Rect(0,0,130,60),"");
+				GUI.Label(new Rect(8, 2, 120, 60), DupeErrorString);
+				if(GUI.Button( Rect(4,38,60,18),"First")){
+					ClickedRectInd = FirstDupeRect;
+					ReFocusBlank = true;
+					CameraOnRect(Rects[ClickedRectInd].rect);
+					GetFontInfoToGUI(Rects[ClickedRectInd].CIIndex, (SpriteEditor ? Rects[ClickedRectInd].fontIndex : 0));
+				}
+				if(GUI.Button( Rect(66,38,60,18),"Second")){
+					ClickedRectInd = SecondDupeRect;
+					ReFocusBlank = true;
+					CameraOnRect(Rects[ClickedRectInd].rect);
+					GetFontInfoToGUI(Rects[ClickedRectInd].CIIndex, (SpriteEditor ? Rects[ClickedRectInd].fontIndex : 0));
+				}
+			GUI.EndGroup();
+		}
+				
+				
+		if (ErrorMsg[Errors.OverlapChar]) {
+			GUI.BeginGroup(Rect(position.width - MenuBar.width - (ErrorMsg[Errors.DupeChar] ? 228 : 99), position.height - 60, 130, 60));//Overlapping Character Rects 
+				SplitError = OverlapErrorString.Split("#"[0]);
+				GUI.Box(Rect(0, 0, 100, 60), "");
+				GUI.Label(Rect(6, 4, 90, 60), SplitError[0]);
+				if (GUI.Button(Rect(4, 38, 45, 18), SplitError[1])) {
+					ClickedRectInd = FirstOverlapRect;
+					ReFocusBlank = true;
+					CameraOnRect(Rects[ClickedRectInd].rect);
+					GetFontInfoToGUI(Rects[ClickedRectInd].CIIndex, (SpriteEditor ? Rects[ClickedRectInd].fontIndex : 0));
+				}
+				if (GUI.Button(Rect(51, 38, 45, 18), SplitError[2])) {
+					ClickedRectInd = SecondOverlapRect;
+					ReFocusBlank = true;
+					CameraOnRect(Rects[ClickedRectInd].rect);
+					GetFontInfoToGUI(Rects[ClickedRectInd].CIIndex, (SpriteEditor ? Rects[ClickedRectInd].fontIndex : 0));
+				}
+			GUI.EndGroup();
+		}
+		
+		
+		if(SpriteSetDialog){//SpriteSet Dialog
+			GUI.BeginGroup(Rect(position.width-150,position.height/2.0-120,167,200)); //Clip SpriteSet Dialog
+				GUI.Box(Rect(0,0,150,149+PromptOffset4),"");
+				if(GUI.Button(Rect(10,72,60,30),"Next")){
+					AddRect(true,RectFontIndex);
+				}
+				if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Return && GUI.GetNameOfFocusedControl()=="SpriteIndInput") {
+					AddRect(true,RectFontIndex);
+				}
+				if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape && GUI.GetNameOfFocusedControl()=="SpriteIndInput") {
+					SkipRect();
+				}
+				
+				EditorGUIUtility.LookLikeControls(40,60);
+				RectFontIndex = EditorGUI.Popup(Rect(10,10,130,20),"Font:",RectFontIndex,FontListNames);
+				EditorGUIUtility.LookLikeControls(80,50);
+				GUI.SetNextControlName("SpriteIndInput");
+				SpriteIndex = Mathf.Max(EditorGUI.IntField(Rect(10,30,130,20),"Sprite Index:",SpriteIndex),0);
+				EditorGUIUtility.LookLikeControls(40,60);
+				defaultPivotPoint = EditorGUI.EnumPopup(Rect(10,53,130,20),"Pivot:",defaultPivotPoint);
+				if(GUI.Button(Rect(80,72,60,30),"Skip")){
+					SkipRect();
+				}
+			GUI.BeginGroup(Rect(10,107+PromptOffset4,130,30)); //stop SpriteSet Dialog
+				if(DialogStop){
+					if(GUI.Button(Rect(0,0,60,30),"Stop")){
+						PromptOffset4Dest = 0;
+						EndAutoSet();
+						AutoRectList.Clear();
+					}
+					if(GUI.Button(Rect(70,0,60,30),"Cancel")){
+						PromptOffset4Dest = 0;
+					}
+				}
+			GUI.EndGroup();
+				if(GUI.Button(Rect(10,107,130,30),"Stop Sprite Set")){
+					DialogStop = true;
+					PromptOffset4Dest = 30;
+				}
+				if(SpriteIndexRepeatList.Count>1 && AutoSetIndex == 0){
+					if(GUI.Button(Rect(30,149+PromptOffset4,90,20),"Repeat Last")){
+						RepeatSetting = true;
+						for (i = 0; i<SpriteIndexRepeatList.Count; i++){
+							if(SpriteIndexRepeatList[i].x == -1){
+								AutoRectList.RemoveAt(AutoSetIndex);
+							} else {
+								SpriteIndex = SpriteIndexRepeatList[i].x;
+								RectFontIndex = SpriteIndexRepeatList[i].y;
+								defaultPivotPoint = parseInt(SpriteIndexRepeatList[i].z);
+								AddRect(true,RectFontIndex);
+							}
+						}
+						RepeatSetting = false;
+						EndAutoSet();
+					}
+				}
+			GUI.FocusControl("SpriteIndInput");
+			GUI.EndGroup();
+		}
+	} //End of font setter
+	
+	
+	//Below here is drawing RectPacker GUI
+	if(UsingPacker){
+		GUI.Box(Rect(position.width-MenuBar.width,0,MenuBar.width,MenuBar.height),"");/////RightBox
+		GUI.BeginGroup(Rect(4,4,position.width-4,MenuBar.height-8));//Clip The Menu pics
+			GUI.DrawTexture(Rect(position.width-8-MenuPics[2].width,0,MenuPics[2].width, MenuPics[2].height),MenuPics[2]);
+		GUI.EndGroup();
+		GUI.BeginGroup(Rect(position.width-MenuBar.width,position.height - 80 - PromptOffset1,MenuBar.width,50)); //BGCol Group
+			GUI.Label(Rect(10,0,130,40),"Background\ncolor:");
+			BGCol = EditorGUI.ColorField(Rect(90,8,50,20),BGCol);
+		GUI.EndGroup();
+		
+		GUI.BeginGroup(Rect(position.width-MenuBar.width+10,position.height - 70,MenuBar.width,150)); //Back to menu Group
+			GUI.BeginGroup(Rect(0,30-PromptOffset1,130,200)); //Back to menu Group
+				if(MenuPrompt){
+					if(GUI.Button(Rect(0,0,60,30),"Return")){
+						UsingPacker = false;
+						UsingMenu = true;
+						ResetError();
+						MenuPrompt = false;
+						PromptOffset1Dest = 0;
+						position = Rect(position.x, position.y - 5, 512, position.height);
+					}
+					if(GUI.Button(Rect(70,0,60,30),"Cancel")){
+						PromptOffset1Dest = 0;
+					}
+				}
+			GUI.EndGroup();
+			if(GUI.Button(Rect(0,31,130,30),"Return to Menu")){
+				PromptOffset1Dest = 30;
+				MenuPrompt = true;
+			}
+		GUI.EndGroup();
+		
+		GUI.BeginGroup(Rect(0,0,position.width-150,position.height));//Clip The Background Box
+			GUI.color = BGCol;
+			if(outTex){
+				GUI.Box(new Rect(4 + drawOffsetPos.x, 4 + drawOffsetPos.y, outTex.width + 12, outTex.height + 12), "", "theTexBG");
+			} else {
+				GUI.Box(Rect(4,4,256,256),"","theTexBG");
+			}
+			GUI.color = Color.white;
+		GUI.EndGroup();
+		
+		if(GUI.Button(Rect(position.width - 140,10,130,30),"Pack!")){
+			ClearLog();
+			BeginPack();	
+		}
+		
+		GUI.BeginGroup(Rect(position.width - 140,45,130,500));
+			GUI.Label(Rect(0,0,130,20),"Sort Rects:");
+			SortMode = GUI.SelectionGrid(Rect(0,20,130,75),SortMode,Sorts,2);
+			GUI.Label(Rect(0,110,130,22),"Packing Method:");
+			PackMode = GUI.SelectionGrid(Rect(0,130,130,75),PackMode,Packs,2);
+			AllowNPOT = GUI.Toggle(Rect(0,220,130,20),AllowNPOT,"Allow NPOT result");
+			AllowRotationTest = GUI.Toggle(Rect(0,240,130,20),AllowRotationTest,"Allow Rotation test");;
+			AnchorSort = GUI.Toggle(Rect(0,260,130,20),AnchorSort,"Sort Anchor Mode");;
+			FitToPOT = GUI.Toggle(Rect(0,280,130,20),FitToPOT,"Fit to POT Texture");
+			EditorGUIUtility.LookLikeControls(80,25);
+			PackBuffer = Mathf.Max(EditorGUI.IntField(Rect(0,305,130,20),"Rect Buffer:",PackBuffer,"TextField"),0);
+		GUI.EndGroup();
+		
+		if(outTex){
+			GUI.BeginGroup(Rect(0,0,position.width-150,position.height));
+				GUI.DrawTexture(new Rect(10 + drawOffsetPos.x, 10 + drawOffsetPos.y, outTex.width, outTex.height), outTex);
+			GUI.EndGroup();
+		}
+	}
+	
+	
+	if(ErrorMsg[Errors.NoMaterial]){
+		GUI.BeginGroup(Rect(position.width/2 - 75,position.height/2 - 30,150,150)); //Error NoMaterial Group
+			GUI.Box(Rect(0,0,150,90),"");
+			GUI.Label(Rect(8,4,135,150),"One of your Fonts has no material attatched. Add a material that uses the \"Textured Text Shader\" shader.");		
+		GUI.EndGroup();
+	}
+	
+	if(ErrorMsg[Errors.NoTexture]){
+		GUI.BeginGroup(Rect(position.width/2 - 75,position.height/2 - 30,150,150)); //Error NoMaterial Group
+			GUI.Box(Rect(0,0,150,60),"");
+			GUI.Label(Rect(8,4,135,150),"One of your Fonts has a material with no texture map assigned.");		
+		GUI.EndGroup();
+	}
+	
+	if(ErrorMsg[Errors.NoSpriteMaterial]){
+		GUI.BeginGroup(Rect(position.width/2 - 65,position.height/2 - 30,130,150)); //Error No Sprite Material Group
+			GUI.Box(Rect(0,0,130,60),"");
+			GUI.Label(Rect(8,4,125,150),"Your sprite has no material and/or texture assigned.");		
+		GUI.EndGroup();
+	}
+	
+	if(ErrorMsg[Errors.NoTextMesh]){
+		GUI.BeginGroup(Rect(position.width/2 - 71,position.height/2 - 30,142,150)); //Error No TextMesh/Renderer Group
+			GUI.Box(Rect(0,0,142,60),"");
+			GUI.Label(Rect(8,4,137,150),"Your sprite has no TextMesh and/or no Renderer components.");		
+		GUI.EndGroup();
+	}
+	
+	if(ErrorMsg[Errors.NPOT]){
+		GUI.BeginGroup(Rect(position.width/2 - 100,position.height/2 - 30,200,60)); //Error NPOT Group
+			GUI.Box(Rect(0,0,200,60),"");
+			GUI.Label(Rect(6,4,190,150),"Your Font Map is NPOT, Change the Import Settings property for NPOT maps to 'None'.");		
+		GUI.EndGroup();
+	}
+	
+	if(ErrorMsg[Errors.ReadWrite]){
+		GUI.BeginGroup(Rect(position.width/2 - 100,position.height/2 - 30,200,60)); //Error ReadWrite Group
+			GUI.Box(Rect(0,0,200,60),"");
+			GUI.Label(Rect(10,4,190,60),"Please set Read/Write Enabled in the texture settings for the Font Map before running.");		
+		GUI.EndGroup();
+	}
+	
+	if(ErrorMsg[Errors.Format]){
+		GUI.BeginGroup(Rect(position.width/2 - 100,position.height/2 - 40,200,80)); //Error Format Group
+			GUI.Box(Rect(0,0,200,80),"");
+			GUI.Label(Rect(10,4,185,80),"Please set the Font Map to a compatible format in its Texture Settings (eg. Compressed, Truecolor, RGBA32).");		
+		GUI.EndGroup();
+	}
+	
+	if(ErrorMsg[Errors.Size]){
+		GUI.BeginGroup(Rect(position.width/2 - 75,position.height/2 - 30,200,130)); //Error Size Group
+			GUI.Box(Rect(0,0,150,80),"");
+			GUI.Label(Rect(8,4,135,130),"Your texture Map is larger than the import size, change this in the Import Settings");		
+		GUI.EndGroup();
+	}
+	
+	if(ErrorMsg[Errors.SameFont]){
+		GUI.BeginGroup(Rect(position.width/2 - 90,position.height/2 - 30,180,130)); //Error SameFont Group
+			GUI.Box(Rect(0,0,180,60),"");
+			GUI.Label(Rect(8,4,170,60),"You have assigned a sprite that has the same font (animation) more than once.");
+		GUI.EndGroup();
+	}
+	
+	if(ErrorMsg[Errors.NoFonts]){
+		GUI.BeginGroup(Rect(position.width/2 - 75,position.height/2 - 30,150,130)); //Error NoFonts Group
+			GUI.Box(Rect(0,0,150,60),"");
+			GUI.Label(Rect(8,4,130,60),"You have assigned a sprite that contains no fonts (animations).");
+		GUI.EndGroup();
+	}
+	
+	if(ErrorMsg[Errors.MissedFont]){
+		GUI.BeginGroup(Rect(position.width/2 - 75,position.height/2 - 30,150,130)); //Error MissedFont Group
+			GUI.Box(Rect(0,0,150,60),"");
+			GUI.Label(Rect(8,4,130,60),"You have assigned a sprite with a missing font (animation).");
+		GUI.EndGroup();
+	}
+	
+	if(ErrorMsg[Errors.ShareFont]){
+		GUI.BeginGroup(Rect(position.width/2 - 70,position.height/2 - 30,140,130)); //Error ShareFont Group
+			GUI.Box(Rect(0,0,140,60),"");
+			GUI.Label(Rect(8,4,130,60),"The in-sprite and out-sprite share font (animation) objects.");
+		GUI.EndGroup();
+	}
+	
+	if(ErrorMsg[Errors.UnevenLength]){
+		GUI.BeginGroup(Rect(position.width/2 - 85,position.height/2 - 30,170,130)); //Error UnevenLength Group
+			GUI.Box(Rect(0,0,170,60),"");
+			GUI.Label(Rect(8,4,160,60),"The in-sprite and out-sprite have a different number of fonts (animations).");
+		GUI.EndGroup();
+	}
+	
+	this.Repaint();
+}
+
+
+//Leave the main menu and go into pack or set
+function Begin (Mode:int) {
+	ResetError();
+	
+	//To ignore any errors, comment out the return; and x=true lines in each error check
+	if(Mode == 0 || Mode == 1){//Checks for setter
+		if(Mode == 1){ //Checks things related to sprites
+			if(!CheckFonts(FontContainer)){
+				return;
+			}
+			theTex = FontContainer.spriteMaterial.mainTexture as Texture2D;
+		}
+		
+		if(Mode == 0 && !theFont.material){ //Checks if the font has material assigned
+			ErrorMsg[Errors.NoMaterial] = true;
+			return;
+		}
+		
+		if(Mode == 0){ //Checks if the font material has a texture
+			if(!theFont.material.mainTexture){
+				ErrorMsg[Errors.NoTexture] = true;
+				return;
+			} else {
+				theTex = theFont.material.mainTexture as Texture2D;
+			}
+		}
+		
+		if(!CheckNPOT(theTex)){ //Checks the tex for NPOT size, and if it is, checks if 'none' is set.
+			ErrorMsg[Errors.NPOT] = true;
+			return;
+		}
+		
+		if(Mode == 0 && CheckImportSize(theTex)){ //Checks if the importer max size can encompass the actual image
+			ErrorMsg[Errors.Size] = true;
+			return;
+		}
+		
+		var SO = new SerializedObject(theTex);
+		var p = SO.FindProperty("m_IsReadable");
+		if(!p.boolValue){ //Checks Read/Write
+			ErrorMsg[Errors.ReadWrite] = true;
+			return;
+		}
+		
+		if(theTex.format != TextureFormat.ARGB32 && theTex.format != TextureFormat.RGBA32 && 
+		theTex.format != TextureFormat.BGRA32 && theTex.format != TextureFormat.RGB24 && 
+		theTex.format != TextureFormat.Alpha8 && theTex.format != TextureFormat.ATF_RGB_DXT1 && 
+		theTex.format != TextureFormat.DXT1 && theTex.format != TextureFormat.DXT5){ //Checks the tex format (best to use compressed or truecolor
+			ErrorMsg[Errors.Format] = true;
+			return;
+		}
+	}
+	
+	if(Mode == 2 || Mode == 3){//checks for packer
+		if(Mode == 3){ //Sprite appropriateness checks
+			if(!CheckFonts(inFontContainer)){return;}
+			if(!CheckFonts(outFontContainer)){return;}
+			if(!CheckInOutContainers()){return;}
+			inTex = inFontContainer.spriteMaterial.mainTexture as Texture2D;
+		}
+		
+		if(Mode == 2 && (!inFont.material || !outFont.material)){ //Checks if the font has material assigned
+			ErrorMsg[Errors.NoMaterial] = true;
+			return;
+		}
+		
+		if(Mode == 2){ //Checks if the material has a texture assigned
+			if(!inFont.material.mainTexture){
+				ErrorMsg[Errors.NoTexture] = true;
+				return;
+			} else {
+				inTex = inFont.material.mainTexture as Texture2D;
+			}
+		}
+		
+		if(!CheckNPOT(inTex)){ //Checks the tex for NPOT size, and if it is, checks if 'none' is set.
+			ErrorMsg[Errors.NPOT] = true;
+			return;
+		}
+		
+		if(CheckImportSize(inTex)){ //Checks if the importer max size can encompass the actual image
+			ErrorMsg[Errors.Size] = true;
+			return;
+		}
+		
+		SO = new SerializedObject(inTex);
+		p = SO.FindProperty("m_IsReadable");
+		if(!p.boolValue){ //Checks Read/Write
+			ErrorMsg[Errors.ReadWrite] = true;
+			return;
+		}
+		if(inTex.format != TextureFormat.ARGB32 && inTex.format != TextureFormat.RGBA32 && 
+		inTex.format != TextureFormat.BGRA32 && inTex.format != TextureFormat.RGB24 && 
+		inTex.format != TextureFormat.Alpha8 && inTex.format != TextureFormat.ATF_RGB_DXT1 && 
+		inTex.format != TextureFormat.DXT1 && inTex.format != TextureFormat.DXT5){ //Checks the tex format (best to use compressed or truecolor
+			ErrorMsg[Errors.Format] = true;
+			return;
+		}
+	}
+	
+	PromptOffset1 = 0;
+	PromptOffset1Dest = 0;
+	
+	if(Mode == 0 || Mode == 1){ // Load and initialise Setter
+		position = Rect(position.x,position.y - 5, Mathf.Max(theTex.width + 300 + 12,587), Mathf.Max(theTex.height+12,512+12));
+		Shape = new List.<Vector2>();
+		ShapeSmartLine = new List.<Vector2>();
+		Rects = new List.<SetRect>();
+		AutoRectList = new List.<SetRect>();
+		UnsortAutoRectList = new List.<SetRect>();
+		FontList = new Font[(Mode == 1?FontContainer.animations.Length:1)];
+		if(Mode == 1){
+			FontListNames = new String[FontList.Length];
+			for (var i = 0; i<FontList.Length; i++){
+				FontList[i] = FontContainer.animations[i];
+				FontListNames[i] = FontList[i].name;
+				if(FontList[i].characterInfo.Length<1){
+					ResetFont(i);
+				}
+				FontList[i].material = FontContainer.spriteMaterial;
+			}
+			SpriteFrame = 0;
+			SpritePropertiesFontIndex = 0;
+			SpritePropertiesFontIndexOld = 1;
+			ChrL = -1;
+		} else {
+			ChrL = 47;
+			FontList[0] = theFont;
+		}
+		if(Mode == 0 && UsePreview){
+			LocatePreview(FontList[0]);
+		}
+		if(Mode == 1 && UsePreview){
+			LocatePreviewSprite(FontContainer.gameObject);
+		}
+		UsingEditor = true;
+		UsingMenu = false;
+		ClickedOnRect = false;
+		ClickedRectInd = -1;
+		CharCount = 0;
+		Orient = 0;
+		OrientOld = 0;
+		drawOffsetPos = Vector2(0,0);
+		drawOffsetPosDest = Vector2(0,0);
+		HarvestRects(0, false);	
+	} else { // Load and initiate Packer
+		inFontList = new Font[(Mode == 3?inFontContainer.animations.Length:1)];
+		outFontList = new Font[(Mode == 3?outFontContainer.animations.Length:1)];
+		if(Mode == 3){
+			for (i = 0; i<inFontList.Length; i++){
+				inFontList[i] = inFontContainer.animations[i];
+				outFontList[i] = outFontContainer.animations[i];
+			}
+		} else {
+			inFontList[0] = inFont;
+			outFontList[0] = outFont;
+		}
+		if(Mode == 2 && UsePreview) {
+			LocatePreview(outFontList[0]);
+		}
+		UsingPacker = true;
+		UsingMenu = false;
+		position = Rect(position.x,position.y - 5, 512 + 180, position.height);
+	}
+}
+
+
+//Updates Rects information in the fontsettings object
+function UpdateFont (RectIndex:int, CIIndex:int, fontInd:int, GotoGui:boolean) {
+	var SO = new SerializedObject(FontList[fontInd]);
+	var p = SO.FindProperty("m_CharacterRects.Array");
+	var p2 = p.GetArrayElementAtIndex(CIIndex);
+	p2.Next(true); //p2 is now CharIndex
+	if(GotoGui){p2.intValue = ChrL;}
+	p2.Next(false); //p2 is now UV Rect
+	var newRect = new Rect(Rects[RectIndex].rect.x/theTex.width, Rects[RectIndex].rect.y/theTex.height, Rects[RectIndex].rect.width/theTex.width, Rects[RectIndex].rect.height/theTex.height);
+	if(Rects[RectIndex].Orient){
+		newRect.y = newRect.y + newRect.height;
+		newRect.height = newRect.height * -1;
+	}
+	p2.rectValue = newRect;
+	p2.Next(false); //p2 is now Vert Rect
+	if(SpriteEditor){
+		newRect = Rect(-Rects[RectIndex].spritePivot.x, Rects[RectIndex].rect.height - Rects[RectIndex].spritePivot.y, Rects[RectIndex].rect.width, -Rects[RectIndex].rect.height);
+	} else {
+		newRect = Rect(Rects[RectIndex].bWidth, Rects[RectIndex].vOffset, Rects[RectIndex].rect.width, -Rects[RectIndex].rect.height);
+	}
+	
+	if(Rects[RectIndex].Orient){
+		if(SpriteEditor){
+			newRect.x = 1 - newRect.y;
+			newRect.y = newRect.width - Rects[RectIndex].spritePivot.x;
+		}
+		newRect.width = Rects[RectIndex].rect.height;
+		newRect.height = Rects[RectIndex].rect.width*-1;
+	}
+	p2.rectValue = newRect;
+	p2.Next(false); //p2 is now Width
+	p2.floatValue = (newRect.width + Rects[RectIndex].aWidth + Rects[RectIndex].bWidth);
+	p2.Next(false); //p2 is now Flip bool
+	p2.boolValue = Rects[RectIndex].Orient;
+	SO.ApplyModifiedProperties();
+	if(GotoGui){GetFontInfoToGUI(CIIndex,fontInd);}	
+}
+
+
+//Gets Rect information from the fontsettings object for the currently selected rect
+function GetFontInfoToGUI (CInd:int, f: int){
+	var SO = new SerializedObject(FontList[f]);
+	var p = SO.FindProperty("m_CharacterRects.Array");
+	var p2 = p.GetArrayElementAtIndex(CInd);
+	p2.Next(true); //p2 is now CharIndex
+	var c : char = p2.intValue;
+	if(c<10){
+		ChrL = "a"[0];
+		ChrStr = "a";
+	} else {
+		ChrL = c;
+		ChrStr = ""+ c;
+	}
+	if(SpriteEditor){
+		SpriteIndex = p2.intValue - 33;
+		SpriteIndexOld = SpriteIndex;
+	}
+	p2.Next(false); //p2 is now UV Rect
+	UVx = p2.rectValue.x * theTex.width;
+	UVy = p2.rectValue.y * theTex.height;
+	UVw = p2.rectValue.width * theTex.width;
+	UVh = p2.rectValue.height * theTex.height;
+	UVRect = Rect(UVx,UVy,UVw,UVh);
+	p2.Next(false); //p2 is now Vert Rect
+	var vertRect = p2.rectValue;
+	p2.Next(false); //p2 is now Width
+	WidBefore = vertRect.x;
+	WidBeforeOld = WidBefore;
+	WidAfter = p2.floatValue - vertRect.width - vertRect.x;
+	if(WidAfter >= -0.01 && WidAfter <= 0.01){
+		WidAfter = 0;
+	}
+	WidAfterOld = WidAfter;
+	p2.Next(false); //p2 is now Flip bool
+	if(p2.boolValue){
+		Orient = 1;
+		OrientOld = 1;
+		Cx = -vertRect.height - vertRect.y;
+		Cy = vertRect.width + vertRect.x - 1;
+	} else {
+		Orient = 0;
+		OrientOld = 0;
+		Cx = -vertRect.x;
+		Cy = -vertRect.height - vertRect.y;
+	}
+	CPos = Vector2(Cx,Cy);
+	if(SpriteEditor){
+		RectFontIndex = f;
+		RectFontIndexOld = f;
+	}
+}
+
+
+//Gets Rect information from the fontsettings object for all rects, and stores in lists
+function HarvestRects (Cycle: int, Undoing:boolean) {
+	var SO = new SerializedObject(FontList[Cycle]);
+	var p = SO.FindProperty("m_CharacterRects.Array.size");
+	if(p.intValue < 1 || (SpriteEditor && p.intValue < 2)){
+		return;
+	}
+	if(Cycle == 0){
+		Rects.Clear();
+		CharCount = 0;
+	}
+	var RectCount = p.intValue;
+	p = SO.FindProperty("m_CharacterRects.Array");
+	for (var i = 0; i< RectCount; i++){
+		if(SpriteEditor && i==0){continue;}
+		var newSetRect = new SetRect();
+		var p2 = p.GetArrayElementAtIndex(i);
+		p2.Next(true); //p2 is now CharIndex
+		p2.Next(false); //p2 is now UV Rect
+		var newRect = Rect(0,0,0,0);
+		newRect.x = p2.rectValue.x * theTex.width;
+		newRect.y = p2.rectValue.y * theTex.height;
+		newRect.width = p2.rectValue.width * theTex.width;
+		newRect.height = p2.rectValue.height * theTex.height;
+		if(newRect.height<0){
+			newRect.height *= -1;
+			newRect.y -= newRect.height;
+		}
+		newSetRect.rect = newRect;
+		p2.Next(false); //p2 is now Vert Rect
+		newRect = p2.rectValue;
+		newSetRect.vOffset = p2.rectValue.y;
+		p2.Next(false); //p2 is now Width
+		newSetRect.aWidth = p2.floatValue - newRect.width - newRect.x;
+		newSetRect.bWidth = newRect.x;
+		p2.Next(false); //p2 is now Flip bool
+		newSetRect.Orient = p2.boolValue;
+		if(p2.boolValue){
+			newSetRect.spritePivot = Vector2(-newRect.height - newRect.y, newRect.width + newRect.x - 1);
+		} else {
+			newSetRect.spritePivot = Vector2(-newRect.x, -newRect.height - newRect.y);
+		}
+		newSetRect.CIIndex = i;
+		newSetRect.fontIndex = Cycle;
+		Rects.Add(newSetRect);
+	}
+	CharCount += SpriteEditor?RectCount - 1:RectCount;
+	ClickedOnRect = true;
+	if(!Undoing){
+		ClickedRectInd = 0;
+	} else {
+		if(ClickedRectInd > Rects.Count-1){
+			ClickedRectInd = Rects.Count-1;
+		}
+	}
+	if(Cycle != FontList.Length-1){
+		Cycle++;
+		HarvestRects(Cycle, Undoing);
+		return;
+	}
+	if (SpriteEditor) {
+		CheckSprites();
+	} else {
+		CheckDupeChars();
+	}
+	CheckOverlapRects();
+	GetFontInfoToGUI(Rects[ClickedRectInd].CIIndex,(SpriteEditor?Rects[ClickedRectInd].fontIndex:0));
+	ClearLog();
+}
+
+
+//removes rect from the font settings and lists
+function RemoveRect () {
+	ReFocusBlank = true;
+	CharCount -=1;
+	var SO = new SerializedObject(FontList[Rects[ClickedRectInd].fontIndex]);
+	var p = SO.FindProperty("m_CharacterRects");
+	p.Next(true);
+	p.DeleteArrayElementAtIndex(Rects[ClickedRectInd].CIIndex);
+	SO.ApplyModifiedProperties(); //remove it from the actual font
+	for(var i = 0; i<Rects.Count; i++){ //Shift down all the CIindex for all rects in this font
+		if(Rects[i].fontIndex == Rects[ClickedRectInd].fontIndex && Rects[i].CIIndex > Rects[ClickedRectInd].CIIndex){
+			Rects[i].CIIndex--;
+		}
+	}
+	Rects.RemoveAt(ClickedRectInd); //delete from the rect list
+	if(SpriteEditor){ //check if removing has changed dupes
+		CheckSprites();
+	} else {
+		CheckDupeChars();
+	}
+	ClickedRectInd--;
+	ChrL--;
+	if(Rects.Count>0 && ClickedRectInd==-1){
+		ClickedRectInd = 0;
+	}
+	if(Rects.Count > 0){
+		GetFontInfoToGUI(Rects[ClickedRectInd].CIIndex, Rects[ClickedRectInd].fontIndex);
+	} else {
+		SpriteIndex = 0;
+		SpriteIndexOld = 0;
+	}
+}
+
+
+//transforms any gui draws to screen space, depending on window size, 'camera' pan and scale
+function ConvertPixelsToScreen(r:Rect){
+	return Rect(drawOffsetPos.x - ShrunkX - (theTex.width/2 * (drawOffsetScale-1)) + (r.x * drawOffsetScale), drawOffsetPos.y - ShrunkY + (theTex.height/2 * (drawOffsetScale+1)) - (r.y + r.height) * drawOffsetScale, r.width * drawOffsetScale, r.height * drawOffsetScale);
+}
+
+
+//Snaps 2 rects togther by their corners, for moving rects
+function SnapToPos (r:Rect, ind:int){
+	var rCorner = [Vector2(r.x,r.y),Vector2(r.xMax,r.y),Vector2(r.x,r.yMax),Vector2(r.xMax,r.yMax)];
+	for (var j = 0; j<Rects.Count; j++){
+		if (j == ind){continue;}
+		var RCorner = [Vector2(Rects[j].rect.x,Rects[j].rect.y),Vector2(Rects[j].rect.xMax,Rects[j].rect.y),Vector2(Rects[j].rect.x,Rects[j].rect.yMax),Vector2(Rects[j].rect.xMax,Rects[j].rect.yMax)];
+		for (var C in RCorner){
+			for (var i = 0; i<4; i++){
+				if(Vector2.Distance(rCorner[i],C)<10.0/drawOffsetScale){
+					var result : Rect;
+					switch (i){
+						case 0:
+							result = Rect(C.x, C.y, r.width, r.height);
+							break;
+						case 1:
+							result = Rect(C.x - r.width, C.y, r.width, r.height);
+							break;
+						case 2:
+							result = Rect(C.x, C.y - r.height, r.width, r.height);
+							break;
+						case 3:
+							result = Rect(C.x - r.width, C.y - r.height, r.width, r.height);
+							break;
+					}
+					return result;
+				}
+			}
+		}
+	}
+	return r;
+}
+
+
+//Snaps 2 rects togther by their corners, for resizing rects
+function SnapToSize (r:Rect, ind:int){
+	var rCorner = [Vector2(r.x,r.y),Vector2(r.xMax,r.y),Vector2(r.xMax,r.yMax)];
+	for (var j = 0; j<Rects.Count; j++){
+		if (j == ind){continue;}
+		var RCorner = [Vector2(Rects[j].rect.x,Rects[j].rect.y),Vector2(Rects[j].rect.xMax,Rects[j].rect.y),Vector2(Rects[j].rect.x,Rects[j].rect.yMax),Vector2(Rects[j].rect.xMax,Rects[j].rect.yMax)];
+		for (var C in RCorner){
+			for (var i = 0; i<3; i++){
+				if(Vector2.Distance(rCorner[i],C)<10.0/drawOffsetScale){
+					SnapFound = true;
+					SnapRect = Rect(Event.current.mousePosition.x - 7,Event.current.mousePosition.y - 7,14,14);
+					var result : Rect;
+					switch (i){
+						case 0:
+							result = Rect(C.x,C.y,r.width,Mathf.Abs((r.y + r.height) - C.y));
+							break;
+						case 1:
+							result = Rect(r.x,C.y,Mathf.Abs(r.x - C.x),Mathf.Abs((r.y + r.height) - C.y));
+							break;
+						case 2:
+							result = Rect(r.x,r.y,Mathf.Abs(r.x - C.x),r.height);
+							break;
+					}
+					result.width = Mathf.Max(result.width,2);
+					result.height = Mathf.Max(result.height,2);
+					return result;
+				}
+			}
+		}
+	}
+	return r;
+}
+
+
+//Auto set, looks for pixels which match the ignore condition, then floodfills to find the whole shape
+function AutoSet () {
+	MakeTexAsInts();
+	for (var j = theTex.height-1; j>-1; j--){
+		for (var i = 0; i<theTex.width ; i++){
+			if(TexAsInts[i,j]!=0 && TexAsInts[i,j]!=2){
+				Shape.Clear();
+				if(SmartMode || SpriteEditor){
+					ShapeSmartLine.Clear();
+				}
+				FloodFill(i,j);
+				var xMin = theTex.width;
+				var xMax = 0;
+				var yMin = theTex.height;
+				var yMax = 0;
+				for(var a in Shape){
+					if(a.x>xMax) xMax = a.x;
+					if(a.x<xMin) xMin = a.x;
+					if(a.y>yMax) yMax = a.y;
+					if(a.y<yMin) yMin = a.y;
+				}
+				var theRect = new Rect(xMin - FloodfillPadding, yMin - FloodfillPadding, xMax - xMin + 1 + FloodfillPadding*2, yMax - yMin + 1 + FloodfillPadding*2);
+				var newSetRect = new SetRect();
+				newSetRect.rect = theRect;
+				if(SmartMode){
+					if(ShapeSmartLine.Count>1){
+						if(ShapeSmartLine[0].y == ShapeSmartLine[1].y){
+						//Compare the first smartline pixel with the second, if they have the same y,
+						//then the character is upright, otherwise rotated
+							newSetRect.Orient = false;
+							newSetRect.vOffset = theRect.yMax - ShapeSmartLine[0].y;
+						} else {
+							newSetRect.Orient = true;
+							newSetRect.vOffset = theRect.xMax - ShapeSmartLine[0].x;
+						}
+					}
+				}
+				if(SpriteEditor){
+					if(ShapeSmartLine.Count>0){
+						newSetRect.spritePivot = Vector2(ShapeSmartLine[0].x - theRect.x, ShapeSmartLine[0].y - theRect.y);
+					}
+				}
+				UnsortAutoRectList.Add(newSetRect);
+			}
+		}
+	}
+	
+	AutoRectList.Add(UnsortAutoRectList[0]);
+	while (UnsortAutoRectList.Count > 0){
+		AutoRectList.Add(UnsortAutoRectList[FindLeftMost()]);
+		UnsortAutoRectList.Remove(AutoRectList[AutoRectList.Count-1]);
+	}
+	AutoRectList.RemoveAt(0);
+
+	if(SpriteEditor){
+		SpriteSetDialog = true;
+	} else {
+		AutoSetDialog = true;
+	}
+	SpriteIndex = 0;
+	AutoSetIndex = 0;
+	CameraOnRect(AutoRectList[0].rect);
+}
+
+
+//Gets the left-most rect, but only if it has a vertical position within the height of the previous rect
+function FindLeftMost () {
+	var lowest = theTex.width;
+	var backuplowest = theTex.width;
+	var lowestInd = -1;
+	var backupInd = -1;
+	for (var i = 0; i<UnsortAutoRectList.Count; i++){
+		if(UnsortAutoRectList[i].rect.x < lowest){
+			if(UnsortAutoRectList[i].rect.center.y < AutoRectList[AutoRectList.Count-1].rect.center.y + AutoRectList[AutoRectList.Count-1].rect.height/2 &&
+					UnsortAutoRectList[i].rect.center.y > AutoRectList[AutoRectList.Count-1].rect.center.y - AutoRectList[AutoRectList.Count-1].rect.height/2){
+				lowest = UnsortAutoRectList[i].rect.x;
+				lowestInd = i;
+			}
+		}
+		if(UnsortAutoRectList[i].rect.x < backuplowest){
+			backuplowest = UnsortAutoRectList[i].rect.x;
+			backupInd = i;
+		}
+	}
+	if(lowestInd != -1){
+		return lowestInd;
+	} else {
+		return backupInd;
+	}
+}
+
+
+//floodfill to find the whole shape, using a scanline algo
+function FloodFill (x:int, y:int) {
+	if(TexAsInts[x,y] == 0 || TexAsInts[x,y] == 2){ return; }
+	var y1 : int = y;
+	while (y1<theTex.height && (TexAsInts[x,y1] == 1 || TexAsInts[x,y1] == 3)) {
+		if(SmartMode || SpriteEditor){
+			if(TexAsInts[x,y1] == 3){
+				ShapeSmartLine.Add(Vector2(x,y1));
+			}
+		}
+		TexAsInts[x,y1]=2;
+		Shape.Add(Vector2(x,y1));
+		y1++;
+	}
+	var maxY = y1-1;
+	y1 = y-1;
+	while (y1>-1 && (TexAsInts[x,y1] == 1 || TexAsInts[x,y1] == 3)) {
+		if(SmartMode || SpriteEditor){
+			if(TexAsInts[x,y1] == 3){
+				ShapeSmartLine.Add(Vector2(x,y1));
+			}
+		}
+		TexAsInts[x,y1]=2;
+		Shape.Add(Vector2(x,y1));
+		y1--;
+	}
+	var minY = y1+1;
+	for (var i = minY; i<maxY+1; i++){
+		if(x>0 && (TexAsInts[x-1,i] == 1 || TexAsInts[x-1,i] == 3)){
+			FloodFill(x-1,i);
+		}
+		if(x< theTex.width-1 && (TexAsInts[x+1,i] == 1 || TexAsInts[x+1,i] == 3)){
+			FloodFill(x+1,i);
+		}
+	}
+}
+
+
+//add rect to the font settings (during autoset mostly)
+function AddRect (AddSprite:boolean, fontInd:int) {
+	if(Rects.Count == 0 && !RepeatSetting){
+		CharRepeatList.Clear();
+		SpriteIndexRepeatList.Clear();
+	}
+	var SO = new SerializedObject(FontList[fontInd]);
+	var p = SO.FindProperty("m_CharacterRects.Array.size");
+	p.intValue = FontList[fontInd].characterInfo.Length+1;
+	SO.ApplyModifiedProperties();
+	if(AddSprite){
+		ChrL = SpriteIndex+33;
+	} else {
+		ChrL = AutoSetCharStr[0];
+	}
+	if(!RepeatSetting && !AddSprite){CharRepeatList.Add(ChrL);}
+	if(!RepeatSetting && AddSprite){SpriteIndexRepeatList.Add(Vector3(SpriteIndex,RectFontIndex, parseInt(defaultPivotPoint)));}
+	if(defaultPivotPoint != 0){
+		AutoRectList[AutoSetIndex].spritePivot = Vector2(Mathf.FloorToInt(AutoRectList[AutoSetIndex].rect.width * defaultPivots[defaultPivotPoint].x),Mathf.FloorToInt(AutoRectList[AutoSetIndex].rect.height * defaultPivots[defaultPivotPoint].y));
+	}
+	AutoRectList[AutoSetIndex].fontIndex = RectFontIndex;
+	AutoRectList[AutoSetIndex].CIIndex = FontList[RectFontIndex].characterInfo.Length-1;
+	Rects.Add(AutoRectList[AutoSetIndex]);
+	UpdateFont(AutoSetIndex, AutoRectList[AutoSetIndex].CIIndex, fontInd, true);
+	AutoSetCharStr="";
+	ReFocusBlank = true;
+	CharCount++;
+	if(AutoSetIndex == AutoRectList.Count-1){
+		EndAutoSet();
+		return;
+	}
+	if(AddSprite){
+		SpriteIndex++;
+	}
+	AutoSetIndex++;
+	CameraOnRect(AutoRectList[AutoSetIndex].rect);
+}
+
+
+//Skips a rect during autoset
+function SkipRect() {
+	if(Rects.Count == 0){
+		if(SpriteEditor){
+			SpriteIndexRepeatList.Clear();
+		} else {
+			CharRepeatList.Clear();
+		}
+	}
+	if(AutoSetIndex == AutoRectList.Count-1){
+		EndAutoSet();
+	} else {
+		ReFocusBlank = true;
+		AutoRectList.RemoveAt(AutoSetIndex);
+		CameraOnRect(AutoRectList[AutoSetIndex].rect);
+		if(SpriteEditor){
+			SpriteIndexRepeatList.Add(Vector3(-1,0,0));
+		} else {
+			CharRepeatList.Add(0);
+		}
+	}
+}
+
+
+//moves the 'camera' to center on the currently inspect rect r
+function CameraOnRect (r:Rect) {
+	drawOffsetScaleDest = 3.0;
+	drawOffsetPosDest = Vector2(theTex.width/2 - r.center.x, r.center.y - theTex.height/2) * drawOffsetScaleDest;
+}
+
+
+//clear everything from lists and the font settings
+function ResetFont (fInd : int) {
+	ResetError();
+	if(CharRepeatList == null){
+		CharRepeatList = new List.<char>();
+	}
+	if(SpriteIndexRepeatList == null){
+		SpriteIndexRepeatList = new List.<Vector3>();
+	}
+
+	ClickedOnRect = false;
+	PerCharacterOffset=false;
+	Rects.Clear();
+	UnsortAutoRectList.Clear();
+	AutoRectList.Clear();
+	if(fInd != -1){
+		var newCI = new CharacterInfo[(SpriteEditor?1:0)];
+		FontList[fInd].characterInfo = newCI;
+	} else {
+		for (var i = 0; i< FontList.Length; i++){
+			newCI = new CharacterInfo[(SpriteEditor?1:0)];
+			FontList[i].characterInfo = newCI;
+		}
+	}
+	if(SpriteEditor){
+		SpriteIndex = -1;
+		SpriteIndexOld = -1;
+		ChrL = -1;
+	} else {
+		ChrL = 47;
+	}
+	RectFontIndex = 0;
+	CharCount = 0;
+	ClickedRectInd = -1;
+}
+
+
+//Checks if image is NPOT, then checks if NPOT import is set to none
+function CheckNPOT (T:Texture2D) {
+	var result = true;
+	if (T != null) {
+		var assetPath : String = AssetDatabase.GetAssetPath(T);
+		var importer : TextureImporter = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+		
+		if (importer != null) {
+			var args : Object[] = new Object[2];
+			var M = typeof(TextureImporter).GetMethod("GetWidthAndHeight",System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+			M.Invoke(importer, args);
+			var w : int = args[0] cast int;
+			var h : int = args[1] cast int;
+			result = ((w & (w - 1)) == 0 && (h & (h - 1)) == 0);
+			if(!result){
+				if(importer.npotScale == TextureImporterNPOTScale.None) {result = true;}
+			}
+		}
+	}
+	return result;
+}
+
+
+//Compares image size to importer max size
+function CheckImportSize (T:Texture2D) {
+	if (T != null) {
+		var assetPath : String = AssetDatabase.GetAssetPath(T);
+		var importer : TextureImporter = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+		
+		if (importer != null) {
+			var args : Object[] = new Object[2];
+			var M = typeof(TextureImporter).GetMethod("GetWidthAndHeight",System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+			M.Invoke(importer, args);
+			var w : int = args[0] cast int;
+			var h : int = args[1] cast int;
+			
+			if(importer.maxTextureSize < w || importer.maxTextureSize < h){
+				return true;
+			} else {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+
+//Stops autoset, checks for duplicates and overlaps
+function EndAutoSet () {
+	if(SmartMode){
+		SmartMode = false;
+		PerCharacterOffset=true;
+	}
+	
+	if(SpriteEditor){
+		CheckSprites();
+	} else {
+		CheckDupeChars();
+	}
+	CheckOverlapRects();
+	AutoSetIndex=0;
+	AutoSetDialog = false;
+	SpriteSetDialog = false;
+	drawOffsetPosDest = Vector2(0,0);
+	drawOffsetScaleDest = 1.0;
+	if(Rects.Count == 0){
+		return;
+	}
+	ClickedRectInd = 0;
+	if(!SpriteEditor){ErrorMsg[Errors.Spacebar] = true;}
+	GetFontInfoToGUI(0,0);
+}
+
+
+//Clears the status of all error messages, disable any prompts and dialogs
+function ResetError () {
+	ResetPrompt = false;
+	AutoPrompt = false;
+	AutoSetDialog = false;
+	PerCharacterOffset = false;
+	for (var i = 0; i<ErrorMsg.Length; i++){
+		ErrorMsg[i] = false;
+	}
+}
+
+
+//Start the Rect Packer according to the selected gui buttons
+function BeginPack () {
+	TimeA = System.DateTime.Now;
+	
+	if(inTex){
+		inTexWidth = inTex.width;
+		inTexHeight = inTex.height;
+	}
+	
+	StartPackRectList = new List.<PackRect>();
+	ResultPackRectList = new List.<PackRect>();
+	Anchors = new List.<Vector2>();
+	Partitions = new List.<Rect>();
+	
+	HarvestStartPackRectList();
+	
+	var Total = 0;
+	for (var i = 0; i<StartPackRectList.Count; i++){
+		Total += (StartPackRectList[i].ResultRect.width * StartPackRectList[i].ResultRect.height);
+	}
+	Total = Mathf.Sqrt(Total);
+	Total = NearestPOT(Total);
+	
+	DestroyImmediate(outTex);
+	outTex = new Texture2D(Total,Total);
+	outTex.filterMode = FilterMode.Point;
+	for (i = 0; i<outTex.width; i++){
+		for (var j = 0; j<outTex.height; j++){
+			outTex.SetPixel(i,j,Color(0,0,0,0));
+		}
+	}
+	outTex.Apply();
+	
+	for (i = 0; i<StartPackRectList.Count; i++){ //Sort rects according to toolbar choice
+		switch (SortMode){
+			case 0:
+				StartPackRectList[i].Height = StartPackRectList[i].ResultRect.height;
+				break;
+			case 1:
+				StartPackRectList[i].Height = StartPackRectList[i].ResultRect.width;
+				StartPackRectList[i].ResultRect = Rect(StartPackRectList[i].ResultRect.x,StartPackRectList[i].ResultRect.y,StartPackRectList[i].ResultRect.height,StartPackRectList[i].ResultRect.width);
+				StartPackRectList[i].SameOrient = !StartPackRectList[i].SameOrient;
+				break;
+			case 2:
+				if(StartPackRectList[i].ResultRect.height>StartPackRectList[i].ResultRect.width){
+					StartPackRectList[i].Height = StartPackRectList[i].ResultRect.height;
+				} else {
+					StartPackRectList[i].Height = StartPackRectList[i].ResultRect.width;
+					StartPackRectList[i].ResultRect = Rect(StartPackRectList[i].ResultRect.x,StartPackRectList[i].ResultRect.y,StartPackRectList[i].ResultRect.height,StartPackRectList[i].ResultRect.width);
+					StartPackRectList[i].SameOrient = !StartPackRectList[i].SameOrient;
+				}
+				break;
+			case 3:
+				if(StartPackRectList[i].ResultRect.height>StartPackRectList[i].ResultRect.width){
+					StartPackRectList[i].Height = StartPackRectList[i].ResultRect.width;
+					StartPackRectList[i].ResultRect = Rect(StartPackRectList[i].ResultRect.x,StartPackRectList[i].ResultRect.y,StartPackRectList[i].ResultRect.height,StartPackRectList[i].ResultRect.width);
+					StartPackRectList[i].SameOrient = !StartPackRectList[i].SameOrient;
+				} else {
+					StartPackRectList[i].Height = StartPackRectList[i].ResultRect.height;
+				}
+				break;
+		}
+	}
+	
+	
+	for (i = StartPackRectList.Count-1; i>0; i--){
+		CheckAbove(i);
+	}
+	
+	
+	
+	switch (PackMode){ //Pack rects according to toolbar choice
+		case 0:
+			SimplePack();
+			break;
+		case 1:
+			SwitchbackPack();
+			break;
+		case 2:
+			PartitionPack();
+			break;
+		case 3:
+			AnchorPack();
+			break;
+	}
+	
+	DrawResult(ResultPackRectList);
+	
+	var TimeB = System.DateTime.Now - TimeA;
+	Debug.Log("Time taken: " + String.Format("{0:ss ffffff}", TimeB));
+}
+
+
+//Checks given rect for overlap with all others, during pack, and if it fits into the pack area
+function RectIsFree (r1 : Rect) {
+	var NoOverlap = true;
+	for(var i = 0; i< ResultPackRectList.Count; i++){
+		var r2 = ResultPackRectList[i].ResultRect;
+		if((r1.xMin < r2.xMax) && (r1.xMax > r2.xMin) && (r1.yMin < r2.yMax) && (r1.yMax > r2.yMin)){
+			NoOverlap = false;
+		}
+	}
+	
+	if(r1.xMin<0 || r1.xMax > PackSizeX || r1.yMin<0 || r1.yMax > PackSizeY){
+		NoOverlap = false;
+	}
+	return NoOverlap;
+}
+
+
+//Checks given rect for overlap with all others, after autoset
+function AutoRectIsFree (r1 : Rect) {
+	var NoOverlap = true;
+	for(var i = 0; i< Rects.Count; i++){
+		var r2 = Rects[i].rect;
+		if(r1 == r2){continue;}
+		if((r1.xMin < r2.xMax) && (r1.xMax > r2.xMin) && (r1.yMin < r2.yMax) && (r1.yMax > r2.yMin)){
+			return i;
+		}
+	}
+	return -1;
+}
+
+
+//Slides pack rect down and left, if possible, during pack
+function Slide (b:boolean) : int {
+	var y1 = GetPackRect.ResultRect.y;
+	var safe = 0;
+	var step = 1;
+	var testRect = Rect(GetPackRect.ResultRect.x, y1, GetPackRect.ResultRect.width, GetPackRect.ResultRect.height);
+	if(RectIsFree(testRect)){
+		step = -1;
+	}
+	y1 += step;
+	
+	while(true && safe < 300){
+		if(y1<0){
+			GetPackRect.ResultRect.y = y1 - step;
+			return;
+		}
+		if(y1 + GetPackRect.ResultRect.height>PackSizeY){
+			if(AllowNPOT){
+				PackSizeY = y1+ GetPackRect.ResultRect.height;
+				return Slide(b);
+			} else {
+				PackSizeY*=2;
+				return Slide(b);
+			}
+		}
+		testRect = Rect(GetPackRect.ResultRect.x, y1, GetPackRect.ResultRect.width, GetPackRect.ResultRect.height);
+		var NoOverlap = RectIsFree(testRect);
+		if(step == 1 && NoOverlap){
+			GetPackRect.ResultRect.y = y1;
+			return;
+		} 
+		if(step == -1 && !NoOverlap){
+			GetPackRect.ResultRect.y = y1 - step;
+			var x1 = testRect.x;
+			step = -1;
+			while(b && true && safe < 300){
+				if(x1<0){
+					GetPackRect.ResultRect.x = x1 - step;
+					return;
+				}
+				testRect = Rect(x1, GetPackRect.ResultRect.y, GetPackRect.ResultRect.width, GetPackRect.ResultRect.height);
+				if(!RectIsFree(testRect)){
+					GetPackRect.ResultRect.x = x1 - step;
+					return;
+				} 
+				x1 += step;
+				safe++;
+			}
+			return;
+		} 
+		y1 += step;
+		safe++;
+	}
+	Debug.Log("possible infinate loop, oops! Doublecheck that there is the correct number of chracters, if not, try a different packing method");
+	return;
+}
+
+
+//slides rect during an anchor pack, up or down depending on start condition
+function AnchorSlide(r:Rect) {
+	var testRect = Rect(r.x, r.y, r.width, r.height);
+	var leftMost = r.x;
+	var safe = 0;
+	while (RectIsFree(testRect) && leftMost > 0 && safe<300){
+		leftMost = testRect.x;
+		testRect.x--;
+		safe++;
+	}
+	testRect.x = r.x;
+	var topMost = r.y;
+	while (RectIsFree(testRect) && topMost > 0 && safe<300){
+		topMost = testRect.y;
+		testRect.y--;
+		safe++;
+	}
+	if ((r.x - leftMost) > (r.y - topMost)){
+		r.x = leftMost;
+	} else {
+		r.y = topMost;
+	}
+	if(safe == 300){Debug.Log("possible infinate loop, oops! Doublecheck that there is the correct number of chracters, if not, try a different packing method");}
+	return r;
+}
+
+
+//during partition pack, adds rect into the free partition
+function AddPartition (r:Rect, i:int){
+	GetPackRect.ResultRect = r;
+	ResultPackRectList.Add(GetPackRect);
+	if(GetPackRect.ResultRect.xMax>MaxSizeX){MaxSizeX = GetPackRect.ResultRect.xMax;}
+	if(GetPackRect.ResultRect.yMax>MaxSizeY){MaxSizeY = GetPackRect.ResultRect.yMax;}
+	Partitions.RemoveAt(i);
+	if(r.height < r.width){
+		Partitions.Add(Rect(r.xMax,r.yMin,0,r.height));
+		Partitions.Add(Rect(r.xMin,r.yMax,0,-1));
+	} else {
+		Partitions.Add(Rect(r.xMin,r.yMax,r.width,0));
+		Partitions.Add(Rect(r.xMax,r.yMin,-1,0));
+	}
+}
+
+
+//pack by partition, roughly based on lightmap packing
+function PartitionPack () {
+	PackSizeX = 2;
+	PackSizeY = 2;
+	MaxSizeX = 2;
+	MaxSizeY = 2;
+	Partitions.Add(Rect(0,0,PackSizeX,PackSizeY));
+	for (var i = StartPackRectList.Count; i>0; i--){
+		GetFromHeap();
+		var longest = GetPackRect.ResultRect.width>GetPackRect.ResultRect.height?GetPackRect.ResultRect.width:GetPackRect.ResultRect.height;
+		var shortest = GetPackRect.ResultRect.width>GetPackRect.ResultRect.height?GetPackRect.ResultRect.height:GetPackRect.ResultRect.width;
+		var searching = true;
+		var safe = 0;
+		var j = -1;
+		while(searching && safe <500){
+			safe++;
+			j++;
+			if(j>Partitions.Count-1){
+				if(PackSizeX<PackSizeY){
+					if(AllowNPOT){
+						PackSizeX += longest;
+					} else {
+						PackSizeX*=2;
+					}
+				} else {
+					if(AllowNPOT){
+						PackSizeY += longest;
+					} else {
+						PackSizeY*=2;
+					}
+				}
+				j=0; 
+			}
+			var testRect = Rect(Partitions[j].x,Partitions[j].y,GetPackRect.ResultRect.width,GetPackRect.ResultRect.height);
+			if(RectIsFree(testRect)){
+				AddPartition(testRect,j);
+				searching = false;
+			} else if (AllowRotationTest && RectIsFree(Rect(testRect.x,testRect.y,testRect.height,testRect.width))){
+				GetPackRect.SameOrient = !GetPackRect.SameOrient;
+				AddPartition(Rect(testRect.x,testRect.y,testRect.height,testRect.width),j);
+				searching = false;
+			}
+			
+		}
+		if(safe == 500){Debug.Log("possible infinate loop, oops! Doublecheck that there is the correct number of chracters, if not, try a different packing method");}
+	}
+}
+
+
+//pack by anchors, added from top left and bottom right coreners of packed rects, sorted by sortmode
+function AnchorPack () {
+	PackSizeX = 2;
+	PackSizeY = 2;
+	MaxSizeX = 2;
+	MaxSizeY = 2;
+	Anchors.Add(Vector2(0,0));
+	for (var i = StartPackRectList.Count; i>0; i--){
+		GetFromHeap();
+		var searching = true;
+		var j = 0;
+		while (searching){
+			if(j>Anchors.Count-1){
+				if(PackSizeX<PackSizeY){
+					if(AllowNPOT){
+						PackSizeX += GetPackRect.ResultRect.width;
+					} else {
+						PackSizeX*=2;
+					}
+				} else {
+					if(AllowNPOT){
+						PackSizeY += GetPackRect.ResultRect.height;
+					} else {
+						PackSizeY*=2;
+					}
+				}
+				j=0;
+			}
+			var testRect = Rect(Anchors[j].x,Anchors[j].y,GetPackRect.ResultRect.width, GetPackRect.ResultRect.height);
+			if(RectIsFree(testRect)){
+				testRect = AnchorSlide(testRect);
+				GetPackRect.ResultRect = testRect;
+				ResultPackRectList.Add(GetPackRect);
+				if(GetPackRect.ResultRect.xMax>MaxSizeX){MaxSizeX = GetPackRect.ResultRect.xMax;}
+				if(GetPackRect.ResultRect.yMax>MaxSizeY){MaxSizeY = GetPackRect.ResultRect.yMax;}
+				Anchors.Add(Vector2(testRect.xMax,testRect.yMin));
+				Anchors.Add(Vector2(testRect.xMin,testRect.yMax));
+				Anchors.Sort(SortAnchors);
+				searching = false;
+			} else if (AllowRotationTest && RectIsFree(Rect(testRect.x, testRect.y, testRect.height, testRect.width))){
+				GetPackRect.SameOrient = !GetPackRect.SameOrient;
+				testRect = Rect(testRect.x, testRect.y, testRect.height, testRect.width);
+				testRect = AnchorSlide(testRect);
+				GetPackRect.ResultRect = testRect;
+				ResultPackRectList.Add(GetPackRect);
+				if(GetPackRect.ResultRect.xMax>MaxSizeX){MaxSizeX = GetPackRect.ResultRect.xMax;}
+				if(GetPackRect.ResultRect.yMax>MaxSizeY){MaxSizeY = GetPackRect.ResultRect.yMax;}
+				Anchors.Add(Vector2(testRect.xMax,testRect.yMin));
+				Anchors.Add(Vector2(testRect.xMin,testRect.yMax));
+				Anchors.Sort(SortAnchors);
+				searching = false;
+			}
+			j++;
+		}
+	}
+}
+
+
+//pack left to right, then right to left
+function SwitchbackPack () {
+	PackSizeX = outTex.width;
+	PackSizeY = outTex.height;
+	MaxSizeX = 2;
+	MaxSizeY = 2;
+	var SwitchStep = true;
+	for (var i = StartPackRectList.Count; i>0; i--){
+		GetFromHeap();
+		if(ResultPackRectList.Count == 0){
+			GetPackRect.ResultRect.x = 0;
+			GetPackRect.ResultRect.y = 0;
+			ResultPackRectList.Add(GetPackRect);
+		} else {
+			if(SwitchStep){
+				GetPackRect.ResultRect.x = ResultPackRectList[ResultPackRectList.Count-1].ResultRect.x + ResultPackRectList[ResultPackRectList.Count-1].ResultRect.width;
+			} else {
+				GetPackRect.ResultRect.x = ResultPackRectList[ResultPackRectList.Count-1].ResultRect.x - GetPackRect.ResultRect.width;
+			}
+			GetPackRect.ResultRect.y = ResultPackRectList[ResultPackRectList.Count-1].ResultRect.y;
+			if(GetPackRect.ResultRect.x>0 && GetPackRect.ResultRect.xMax<outTex.width){
+				Slide(SwitchStep);
+				ResultPackRectList.Add(GetPackRect);
+				if(GetPackRect.ResultRect.xMax>MaxSizeX){MaxSizeX = GetPackRect.ResultRect.xMax;}
+				if(GetPackRect.ResultRect.yMax>MaxSizeY){MaxSizeY = GetPackRect.ResultRect.yMax;}
+			} else {
+				if(SwitchStep){
+					GetPackRect.ResultRect.x = outTex.width - GetPackRect.ResultRect.width;
+				} else {
+					GetPackRect.ResultRect.x = 0;
+				}
+				GetPackRect.ResultRect.y = ResultPackRectList[ResultPackRectList.Count-1].ResultRect.y + ResultPackRectList[ResultPackRectList.Count-1].ResultRect.height;
+				SwitchStep = !SwitchStep;
+				Slide(SwitchStep);
+				ResultPackRectList.Add(GetPackRect);
+				if(GetPackRect.ResultRect.xMax>MaxSizeX){MaxSizeX = GetPackRect.ResultRect.xMax;}
+				if(GetPackRect.ResultRect.yMax>MaxSizeY){MaxSizeY = GetPackRect.ResultRect.yMax;}
+			}
+		}
+	}
+}
+
+
+//basic pack from left to right, with a downward slide
+function SimplePack () {
+	PackSizeX = outTex.width;
+	PackSizeY = outTex.height;
+	MaxSizeX = 2;
+	MaxSizeY = 2;
+	for (var i = StartPackRectList.Count; i>0; i--){
+		GetFromHeap();
+		if(ResultPackRectList.Count == 0){
+			NewLineIndex=0;
+			GetPackRect.ResultRect.x = 0;
+			GetPackRect.ResultRect.y = 0;
+		} else {
+			if(ResultPackRectList[ResultPackRectList.Count-1].ResultRect.x + ResultPackRectList[ResultPackRectList.Count-1].ResultRect.width + GetPackRect.ResultRect.width > outTex.width){
+				GetPackRect.ResultRect.x = 0;
+				GetPackRect.ResultRect.y = ResultPackRectList[NewLineIndex].ResultRect.y + ResultPackRectList[NewLineIndex].ResultRect.height;
+				NewLineIndex = ResultPackRectList.Count;
+				Slide(true);
+			} else {
+				GetPackRect.ResultRect.x = ResultPackRectList[ResultPackRectList.Count-1].ResultRect.x + ResultPackRectList[ResultPackRectList.Count-1].ResultRect.width;
+				GetPackRect.ResultRect.y = ResultPackRectList[ResultPackRectList.Count-1].ResultRect.y;
+				Slide(true);
+			}
+		}
+		ResultPackRectList.Add(GetPackRect);
+		if(GetPackRect.ResultRect.xMax>MaxSizeX){MaxSizeX = GetPackRect.ResultRect.xMax;}
+		if(GetPackRect.ResultRect.yMax>MaxSizeY){MaxSizeY = GetPackRect.ResultRect.yMax;}
+	}
+}
+
+
+//get the top rect from the heap
+function GetFromHeap () {
+	GetPackRect = StartPackRectList[0];
+	StartPackRectList[0] = StartPackRectList[StartPackRectList.Count-1];
+	StartPackRectList.RemoveAt(StartPackRectList.Count-1);
+	CheckBelow(0);
+}
+
+
+//bubble up in the heap
+function CheckAbove (i:int){
+	if(i == 0){return;}
+	var ParentIndex = Mathf.Floor((i + 1) / 2) - 1;
+	if(StartPackRectList[i].Height>StartPackRectList[ParentIndex].Height){
+		swapPackRect = StartPackRectList[ParentIndex];
+		StartPackRectList[ParentIndex] = StartPackRectList[i];
+		StartPackRectList[i] = swapPackRect;
+		CheckBelow(i);
+	}
+
+}
+
+
+//bubble down in the heap
+function CheckBelow (i:int){
+	var child2Index = (i + 1) * 2;
+	var child1Index = child2Index - 1;
+	var swapIndex = i;
+	if(child1Index<StartPackRectList.Count){
+		if(StartPackRectList[child1Index].Height>StartPackRectList[i].Height){
+			swapIndex = child1Index;
+		}
+	}
+	if(child2Index<StartPackRectList.Count){
+		if(StartPackRectList[child2Index].Height>StartPackRectList[(swapIndex == i)?i:child1Index].Height){
+			swapIndex = child2Index;
+		}
+	}
+	if(swapIndex != i){
+		swapPackRect = StartPackRectList[swapIndex];
+		StartPackRectList[swapIndex] = StartPackRectList[i];
+		StartPackRectList[i] = swapPackRect;
+		CheckBelow(swapIndex);
+	}
+
+}
+
+
+//Sort anchors, either by dist from the origin, or dist to the closest pack boundary
+function SortAnchors(a:Vector2, b:Vector2){
+	if(AnchorSort){
+		var dx = PackSizeX - a.x;
+		var dy = PackSizeY - a.y;
+		var dx2 = PackSizeX - b.x;
+		var dy2 = PackSizeY - b.y;
+		return (dx2>dy2?dx2:dy2).CompareTo(dx>dy?dx:dy);
+	} else {
+		return a.sqrMagnitude.CompareTo(b.sqrMagnitude);
+	}
+}
+
+
+//draws the packed map, translating from startrect to resultrect
+function DrawResult (R:List.<PackRect>) {
+	if(PackBuffer!=0){
+		for (var r = 0; r<R.Count; r++){
+			R[r].ResultRect.width = R[r].ResultRect.width - PackBuffer;
+			R[r].ResultRect.height = R[r].ResultRect.height - PackBuffer;
+		}
+	}
+	DestroyImmediate(outTex);
+	outTex = new Texture2D(AllowNPOT?(FitToPOT?NearestPOT(MaxSizeX):PackSizeX):PackSizeX,AllowNPOT?(FitToPOT?NearestPOT(MaxSizeY):PackSizeY):PackSizeY);
+	outTex.filterMode = FilterMode.Point;
+	for (var i = 0; i<outTex.width; i++){
+		for (var j = 0; j<outTex.height; j++){
+			outTex.SetPixel(i,j,Color(0,0,0,0));
+		}
+	}
+	outTex.Apply();
+	for (r = 0; r<R.Count; r++){
+		for (j = 0; j< R[r].ResultRect.height; j++){
+			for (i = 0; i< R[r].ResultRect.width; i++){
+				if(R[r].SameOrient){
+					var Col = inTex.GetPixel(R[r].StartRect.x + i, R[r].StartRect.y + j);
+				} else {
+					if(R[r].CI.flipped){
+						Col = inTex.GetPixel(R[r].StartRect.x + R[r].StartRect.width - (R[r].StartRect.width - j), R[r].StartRect.y + (R[r].StartRect.height - i) -1);
+					} else {
+						Col = inTex.GetPixel(R[r].StartRect.x + R[r].StartRect.width - j - 1, R[r].StartRect.y + i);
+					}
+				}
+				//Draw in the acutal texture pixel
+				outTex.SetPixel(R[r].ResultRect.x + i, R[r].ResultRect.y + j, Col);
+				//To draw a box around each character rect, uncomment the next 3 lines
+				//if(i == 0 || i == R[r].ResultRect.width-1 || j == 0 || j == R[r].ResultRect.height-1){
+				//	outTex.SetPixel(R[r].ResultRect.x + i, R[r].ResultRect.y + j,Color.black);
+				//}
+			}
+		}
+	}
+	outTex.Apply();
+	var bytes = outTex.EncodeToPNG();
+	var path = AssetDatabase.GetAssetPath(SpriteEditor?outFontContainer:outFontList[0]);
+	path = path.Remove(path.LastIndexOf('/'));
+	path = path + "/" + (SpriteEditor ? outFontContainer.name : outFontList[0].name) + " PackedMap.png";
+	File.WriteAllBytes(path, bytes);
+	SetOutFont();
+	if(!EditorApplication.isPlaying && TextPreviewT &&!SpriteEditor){
+		TextPreviewT.offsetZ = 1;
+		TextPreviewT.offsetZ = 0;
+	}
+	Debug.Log("Pack Complete, Result texture size: " + outTex.width + "x" + outTex.height + " = " + outTex.width*outTex.height + " Pixels");
+	Debug.Log("Pack fits inside " + MaxSizeX + "x" + MaxSizeY + " = " + MaxSizeX*MaxSizeY + " Pixels, and contains " + ResultPackRectList.Count + " characters");
+	position = Rect(position.x, position.y - 5, outTex.width + 170, Mathf.Max(outTex.height + 20, 532));
+}
+
+
+//Draws the sprite map with pivot pixels
+function DrawSpritePivots () {
+	DestroyImmediate(outTex);
+	outTex = new Texture2D(theTex.width, theTex.height);
+	outTex.filterMode = FilterMode.Point;
+	for (var i = 0; i<outTex.width; i++){
+		for (var j = 0; j<outTex.height; j++){
+			outTex.SetPixel(i,j,theTex.GetPixel(i,j));
+		}
+	}
+	
+	for (i=0; i<Rects.Count; i++){
+		outTex.SetPixel(Rects[i].rect.x + Rects[i].spritePivot.x, Rects[i].rect.y + Rects[i].spritePivot.y, SmartColor);
+	}
+	outTex.Apply();
+	
+	var bytes = outTex.EncodeToPNG();
+	File.WriteAllBytes(AssetDatabase.GetAssetPath(theTex) + "/../" + theTex.name + " Pivots.png", bytes);
+	AssetDatabase.Refresh();
+}
+
+
+//Get, rotate if needed, and set the characterinfo from infont to outfont
+function SetOutFont () {
+	var OutCharacterInfoCollection = new List.<CharacterInfo[]>();
+	for (var i = 0; i< inFontList.Length; i++){
+		var OutCharacterInfo = new CharacterInfo[inFontList[i].characterInfo.Length];
+		OutCharacterInfoCollection.Add(OutCharacterInfo);
+	}
+	for ( i = 0; i< ResultPackRectList.Count; i++){
+		var newUvRect = new Rect(ResultPackRectList[i].ResultRect.x/outTex.width, ResultPackRectList[i].ResultRect.y/outTex.height, ResultPackRectList[i].ResultRect.width/outTex.width, ResultPackRectList[i].ResultRect.height/outTex.height);
+		if(ResultPackRectList[i].SameOrient){
+			if(ResultPackRectList[i].CI.flipped){
+				newUvRect.y = newUvRect.y + newUvRect.height;
+				newUvRect.height = newUvRect.height * -1;
+			} else {
+				//The rect hasnt been rotated, and wasnt originally flipped anyway.
+			}
+		} else {
+			if(ResultPackRectList[i].CI.flipped){
+				ResultPackRectList[i].CI.flipped = false;
+			} else {
+				newUvRect.y = newUvRect.y + newUvRect.height;
+				newUvRect.height = newUvRect.height * -1;
+				ResultPackRectList[i].CI.flipped = true;
+				ResultPackRectList[i].CI.vert.width = ResultPackRectList[i].ResultRect.height;
+				ResultPackRectList[i].CI.vert.height = ResultPackRectList[i].ResultRect.width*-1;
+			}
+		}
+		
+		ResultPackRectList[i].CI.uv = newUvRect;
+		OutCharacterInfoCollection[ResultPackRectList[i].fontIndex][ResultPackRectList[i].CIIndex] = ResultPackRectList[i].CI;
+	}
+	for (i=0; i< outFontList.Length; i++){
+		if(SpriteEditor){
+			OutCharacterInfoCollection[i][0] = inFontList[i].characterInfo[0];
+			outFontList[i].material = outFontContainer.spriteMaterial;
+		}
+		outFontList[i].characterInfo = OutCharacterInfoCollection[i];
+		EditorUtility.SetDirty(outFontList[i]);
+	}
+	EditorApplication.SaveAssets();
+	AssetDatabase.Refresh();
+}
+
+
+//harvest all charaterinfos from infont, into PackRect classes
+function HarvestStartPackRectList () {
+	var newPackRect =  new PackRect();
+	StartPackRectList.Clear();
+	for (var j = 0; j<inFontList.Length; j++){
+		for (var i = 0; i< inFontList[j].characterInfo.Length; i++){
+			if(SpriteEditor && i == 0){continue;}
+			var newRect = Rect(0,0,0,0);
+			newRect.x = Mathf.RoundToInt(inFontList[j].characterInfo[i].uv.x * inTexWidth);
+			newRect.y = Mathf.RoundToInt(inFontList[j].characterInfo[i].uv.y * inTexHeight);
+			newRect.width = Mathf.RoundToInt(inFontList[j].characterInfo[i].uv.width * inTexWidth);
+			newRect.height = Mathf.RoundToInt(inFontList[j].characterInfo[i].uv.height * inTexHeight);
+			if(newRect.height<0){
+				newRect.height *= -1;
+				newRect.y -= newRect.height;
+			}
+			newPackRect.StartRect = newRect;
+			newRect = Rect(0,0,0,0);
+			newRect.x = Mathf.RoundToInt(inFontList[j].characterInfo[i].uv.x * inTexWidth);
+			newRect.y = Mathf.RoundToInt(inFontList[j].characterInfo[i].uv.y * inTexHeight);
+			if(inFontList[j].characterInfo[i].flipped){
+				newRect.width = Mathf.RoundToInt(inFontList[j].characterInfo[i].uv.width * inTexWidth) + PackBuffer;
+				newRect.height = Mathf.RoundToInt(inFontList[j].characterInfo[i].uv.height * inTexHeight) - PackBuffer;
+			} else {
+				newRect.width = Mathf.RoundToInt(inFontList[j].characterInfo[i].uv.width * inTexWidth) + PackBuffer;
+				newRect.height = Mathf.RoundToInt(inFontList[j].characterInfo[i].uv.height * inTexHeight) + PackBuffer;
+			}
+			if(newRect.height<0){
+				newRect.height *= -1;
+				newRect.y -= newRect.height;
+			}
+			newPackRect.ResultRect = newRect;
+			newPackRect.CI = inFontList[j].characterInfo[i];
+			newPackRect.CIIndex = i;
+			newPackRect.fontIndex = j;
+			StartPackRectList.Add(new PackRect(newPackRect));
+		}
+	}
+}
+
+
+//increases int to next POT
+function NearestPOT (n:int) {
+	var i : int = 1;
+	while (i<n){
+		i = i<<1;
+	}
+	return i;
+}
+
+
+//Clears the console
+function ClearLog () {
+	var assembly : Assembly = Assembly.GetAssembly(typeof(SceneView));
+	var type : System.Type = assembly.GetType("UnityEditorInternal.LogEntries");
+	var method : MethodInfo = type.GetMethod("Clear");
+	var object = new Object();
+	method.Invoke(object, null);
+}
+
+
+//Find an existing 3Dtext, or create a new one.
+function LocatePreview (f:Font) {
+	if(!TextPreview){
+		TextPreview = GameObject.Find("**Font Setter Preview Text");
+	}
+	if(TextPreview == null){
+		TextPreview = new GameObject();
+		TextPreview.name = "**Font Setter Preview Text";
+		TextPreviewT = TextPreview.AddComponent(TextMesh) as TextMesh;
+		TextPreviewT.font = f;
+		TextPreviewR = TextPreview.AddComponent(MeshRenderer) as Renderer;
+		TextPreviewM = f.material;
+		TextPreviewR.material = TextPreviewM;
+		TextPreviewT.text = "THE FIVE BOXING WIZARDS JUMP QUICKLY\nthe five boxing wizards jump quickly\n0123456789!\"£$%^&*()_+-={}[]:@~;'#<>?,./`¬";
+	} else {
+		TextPreviewT = TextPreview.GetComponent(TextMesh) as TextMesh;
+		TextPreviewR = TextPreview.GetComponent(MeshRenderer) as Renderer;
+		TextPreviewM = f.material;
+		TextPreviewT.font = f;
+		TextPreviewR.material = TextPreviewM;
+	}
+}
+
+
+//Find an existing Preview sprite, or create a new one.
+function LocatePreviewSprite (f:GameObject) {
+	if(!SpritePreview){
+		SpritePreview = GameObject.Find("**Sprite Setter Preview Sprite");
+	}
+	if(SpritePreview == null){
+		SpritePreview = Instantiate(f.gameObject) as GameObject;
+		SpritePreview.gameObject.name = "**Sprite Setter Preview Sprite";
+		SpritePreview.gameObject.transform.parent = SpritePreview.gameObject.transform;
+		SpritePreviewT = SpritePreview.GetComponent(TextMesh) as TextMesh;
+		SpritePreviewT.font = f.GetComponent(AnimatedSprite).animations[0];
+		SpritePreviewR = SpritePreview.GetComponent(MeshRenderer) as Renderer;
+		SpritePreviewR.material = f.GetComponent(AnimatedSprite).spriteMaterial;
+	} else {
+		SpritePreviewT = SpritePreview.transform.GetComponent(TextMesh) as TextMesh;
+		SpritePreviewT.font = f.GetComponent(AnimatedSprite).animations[0];
+		SpritePreviewR = SpritePreview.transform.GetComponent(MeshRenderer) as Renderer;
+		SpritePreviewR.material = f.GetComponent(AnimatedSprite).spriteMaterial;
+	}
+}
+
+
+//compares the in and out font containers for identical fonts
+function CheckInOutContainers () {
+	if(inFontContainer.animations.Length != outFontContainer.animations.Length){
+		ErrorMsg[Errors.UnevenLength] = true;
+		return false;
+	}
+	for (var i = 0; i<inFontContainer.animations.Length; i++){
+		for (var j = 0; j<outFontContainer.animations.Length; j++){
+			if(inFontContainer.animations[i] == outFontContainer.animations[j]){
+				ErrorMsg[Errors.ShareFont] = true;
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+
+//Performs a series of checks on the font container fonts
+function CheckFonts (FC:AnimatedSprite) {
+	if(FC == null){return false;}
+	if(FC.animations ==null || FC.animations.Length<1){
+		ErrorMsg[Errors.NoFonts] = true;
+		return false;
+	}
+	if (!FC.spriteMaterial) {
+		ErrorMsg[Errors.NoSpriteMaterial] = true;
+		return false;
+	}
+
+	if(FC != outFontContainer){
+		if (!FC.spriteMaterial.mainTexture){
+			ErrorMsg[Errors.NoSpriteMaterial] = true;
+			return false;
+		}
+	}
+	for (var i = 0; i< FC.animations.Length; i++){
+		if (!FC.animations[i]) {
+			ErrorMsg[Errors.MissedFont] = true;
+			return false;
+		}
+		var count = 0;
+		for (var j = 0; j<FC.animations.Length; j++){
+			if(FC.animations[i] == FC.animations[j]){count++;}
+		}
+		if(count>1){
+			ErrorMsg[Errors.SameFont] = true;
+			return false;
+		}
+	}
+	if(FC.gameObject.GetComponent(TextMesh) == null || FC.gameObject.GetComponent(Renderer) == null){
+		ErrorMsg[Errors.NoTextMesh] = true;
+		return false;
+	} else {
+		FC.gameObject.GetComponent(TextMesh).font = FC.animations[0];
+		FC.gameObject.GetComponent(Renderer).material = FC.spriteMaterial;
+	}
+
+	return true;
+}
+
+
+//Checks for duped characters
+function CheckDupeChars () {
+	ErrorMsg[Errors.DupeChar]=false;
+	for (var i = 0; i< Rects.Count; i++){
+		for (var j = 0; j< Rects.Count; j++){
+			if(i == j){continue;}
+			if(FontList[Rects[i].fontIndex].characterInfo[Rects[i].CIIndex].index == FontList[Rects[j].fontIndex].characterInfo[Rects[j].CIIndex].index){
+				ErrorMsg[Errors.DupeChar] = true;
+				var C : char = FontList[Rects[i].fontIndex].characterInfo[Rects[i].CIIndex].index;
+				DupeErrorString = "There is more than one Rect for '" + C + "':";
+				FirstDupeRect = i;
+				SecondDupeRect = j;			
+				return;
+			}
+		}
+	}
+}
+
+
+//Checks rects for overlap, sets error string
+function CheckOverlapRects () {
+	ErrorMsg[Errors.OverlapChar] = false;
+	ErrorMsg[Errors.OverlapSprite] = false;
+	for (var i = 0; i<Rects.Count; i++){
+		var n = AutoRectIsFree(Rects[i].rect);
+		if(n != -1){
+			if(SpriteEditor){
+				OverlapErrorString = Rects[n].fontIndex + "#" + FontList[Rects[n].fontIndex].name + " index " + (FontList[Rects[n].fontIndex].characterInfo[Rects[n].CIIndex].index-33) + "#" + Rects[i].fontIndex + "#" + FontList[Rects[i].fontIndex].name + " index " + (FontList[Rects[i].fontIndex].characterInfo[Rects[i].CIIndex].index-33);
+				ErrorMsg[Errors.OverlapSprite] = true;
+			} else {
+				OverlapErrorString = "These Rects Overlap:#" + FontList[Rects[i].fontIndex].characterInfo[Rects[i].CIIndex].index cast char + "#" + FontList[Rects[n].fontIndex].characterInfo[Rects[n].CIIndex].index cast char;
+				ErrorMsg[Errors.OverlapChar] = true;
+			}
+			FirstOverlapRect = i;
+			SecondOverlapRect = n;			
+		}
+	}
+}
+
+
+//overload for checksprites for no provided index
+function CheckSprites () {
+	CheckSprites(0);
+}
+
+
+//Checks for duped and skipped sprites, sets the relevant error string, returns the index of the duped or missed sprite 
+function CheckSprites (inIndex:int) {
+	ErrorMsg[Errors.DupeSprite] = false;
+	ErrorMsg[Errors.SkipSprite] = false;
+	var allInds = new List.<List.<int> >();
+	for (var i = 0; i< FontList.Length; i++){
+		var Inds = new List.<int>();
+		allInds.Add(Inds);
+	}
+	for (i = 0; i< Rects.Count; i++){
+		allInds[Rects[i].fontIndex].Add(FontList[Rects[i].fontIndex].characterInfo[Rects[i].CIIndex].index-33);
+		var count = 0;
+		for (var j = 0; j< Rects.Count; j++){
+			if(j == i){continue;}
+			if(Rects[i].fontIndex == Rects[j].fontIndex && FontList[Rects[i].fontIndex].characterInfo[Rects[i].CIIndex].index == 
+						FontList[Rects[j].fontIndex].characterInfo[Rects[j].CIIndex].index){
+				count++;
+				break;
+			}
+		}
+		if(count > 0){
+			ErrorMsg[Errors.DupeSprite] = true;
+			DupeErrorString = "More than one sprite in:#" + Rects[i].fontIndex + "#" + FontList[Rects[i].fontIndex].name + "#has index " + (FontList[Rects[i].fontIndex].characterInfo[Rects[i].CIIndex].index-33);
+			DupeMissOffset = 1;
+			return i;
+		}
+	}
+	for (i=0; i< allInds.Count; i++){
+		allInds[i].Sort();
+		for (j=0; j<allInds[i].Count; j++){
+			if (j != allInds[i][j]){
+				ErrorMsg[Errors.SkipSprite] = true;
+				SkipErrorString = i + "#" + FontList[i].name + "#is missing index " + j;
+				if(inIndex == i){
+					DupeMissOffset = j - allInds[i][j];
+					return j;
+				} else {
+					break;
+				}
+			}
+		}
+	}
+	return -1;
+}
+
+
+//Tests if the given Rect is inside the editor window
+function RectOnScreen (r:Rect){
+	var r2 : Rect = Rect(0, 0, position.width - 2*MenuBar.width, position.height);
+	return ((r.xMin < r2.xMax) && (r.xMax > r2.xMin) && (r.yMin < r2.yMax) && (r.yMax > r2.yMin));
+}
+
+
+//Checks if a Rect actually has pixels inside it, and if it is inside the bounds of the texture
+function CheckShrinkForPixels (indx:int, StartR: Rect){
+	if(Rects[indx].rect.x > theTex.width-1 || Rects[indx].rect.y > theTex.height-1 || Rects[indx].rect.xMax < 0 || Rects[indx].rect.yMax < 0){
+		//if a rect is entirely outside the texture, return false
+		return false;
+	}
+	//the following 4 parts clip the rect inside the texture boundary
+	if(Rects[indx].rect.x<0){
+		Rects[indx].rect.width += Rects[indx].rect.x;
+		Rects[indx].rect.x = 0;
+	}
+	if(Rects[indx].rect.xMax>theTex.width){
+		Rects[indx].rect.xMax = theTex.width;
+	}
+	if(Rects[indx].rect.y<0){
+		Rects[indx].rect.height += Rects[indx].rect.y;
+		Rects[indx].rect.y = 0;
+	}
+	if(Rects[indx].rect.yMax>theTex.height){
+		Rects[indx].rect.yMax = theTex.height;
+	}
+	//Check every pixel in the rect. if one is found, snap to pixel grid and return true
+	for (var i = 0; i<Rects[indx].rect.width; i++){
+		for (var j = 0; j<Rects[indx].rect.height; j++){
+			if(TexAsInts[Rects[indx].rect.x + i, Rects[indx].rect.y + j] != 0){
+				Rects[indx].rect = Rect.MinMaxRect(Mathf.FloorToInt(Rects[indx].rect.x), Mathf.FloorToInt(Rects[indx].rect.y), Mathf.CeilToInt(Rects[indx].rect.xMax), Mathf.CeilToInt(Rects[indx].rect.yMax));
+				return true;
+			}
+		}
+	}
+	//if the above check didnt find a pixel, put the rect back to non-clipped and snapped, and return false
+	Rects[indx].rect = StartR;
+	return false;
+}
+
+
+//During shrinkwrap, check all pixels along the specified side
+function ShrinkSide (indx:int, side:int, startMode:int) {
+	for (var i = 0; i < ((side == 0 || side == 2)?Rects[indx].rect.width:Rects[indx].rect.height); i++){
+		switch (side){
+			case 0:
+				var x = Rects[indx].rect.x+i;
+				var y = Rects[indx].rect.y;
+				break;
+			case 1:
+				x = Rects[indx].rect.x;
+				y = Rects[indx].rect.y+i;
+				break;
+			case 2:
+				x = Rects[indx].rect.x+i;
+				y = Rects[indx].rect.y + Rects[indx].rect.height-1;
+				break;
+			case 3:
+				x = Rects[indx].rect.x + Rects[indx].rect.width-1;
+				y = Rects[indx].rect.y+i;
+				break;
+		}
+		if(TexAsInts[x,y] != 0){
+			if(startMode == 1){
+				return true;
+			} else if( ((side == 1 || side == 3) && (x == 0 || x == theTex.width -1)) || 
+						((side == 0 || side == 2) && (y == 0 || y == theTex.height-1)) ){
+				return startMode == 1? true:false;
+			} else if(TexAsInts[x + ((side == 0 || side == 2)?0:(side == 1?-1:1)), y + ((side == 1 || side == 3)?0:(side == 0?-1:1))] != 0){
+				return true;
+			} else {
+				continue;
+			}			
+		}
+	}
+	return false;
+}
+
+
+//Shrink or expand all rects to accomodate all included pixels
+function ShrinkWrap () {
+	var outString = "Shrinkwrapped ";
+	MakeTexAsInts();
+	for (var j = 0; j<FontList.Length; j++){
+		if(outString[outString.Length-1] != " "[0]){outString += " ";}
+		for (var i = 0; i< Rects.Count; i++){
+			if(Rects[i].fontIndex != j){continue;}
+			var StartR = Rects[i].rect;
+			if(!CheckShrinkForPixels(i, Rects[i].rect)){continue;}
+			var step = 1;
+			while (step != 0){
+				step = 0;
+				var mode = ShrinkSide(i,0,3);
+				while (mode == ShrinkSide(i,0,mode?2:1)){
+					step++;
+					Rects[i].rect.y += mode?-1:1;
+					Rects[i].spritePivot.y -= mode?-1:1;
+					Rects[i].rect.height += mode?1:-1;
+				}
+				
+				mode = ShrinkSide(i,1,3);
+				while (mode == ShrinkSide(i,1,mode?2:1)){
+					step++;
+					Rects[i].rect.x += mode?-1:1;
+					Rects[i].spritePivot.x -= mode?-1:1;
+					Rects[i].rect.width += mode?1:-1;
+				}
+				
+				mode = ShrinkSide(i,2,3);
+				while (mode == ShrinkSide(i,2,mode?2:1)){
+					step++;
+					Rects[i].rect.height += mode?1:-1;
+				}
+				
+				mode = ShrinkSide(i,3,3);
+				while (mode == ShrinkSide(i,3,mode?2:1)){
+					step++;
+					Rects[i].rect.width += mode?1:-1;
+				}
+			}
+			if(Rects[i].rect != StartR){
+				if(SpriteEditor){
+					if(outString[outString.Length-1] == " "[0]){
+						outString += FontList[Rects[i].fontIndex].name + ", frames:";
+					}
+					outString += (FontList[Rects[i].fontIndex].characterInfo[Rects[i].CIIndex].index-33) + ",";
+				} else {
+					var C : char = FontList[Rects[i].fontIndex].characterInfo[Rects[i].CIIndex].index;
+					outString += "'"+C+"' ";
+				}
+			}
+			UpdateFont(i, Rects[i].CIIndex, Rects[i].fontIndex, false);
+		}
+	}
+	CheckOverlapRects();
+	if(ClickedRectInd!=-1){GetFontInfoToGUI(Rects[ClickedRectInd].CIIndex, Rects[ClickedRectInd].fontIndex);}
+	if(outString.Length>20){
+		if(outString[outString.Length-1] == ","[0]){outString = outString.TrimEnd([","[0]]);}
+		Debug.Log(outString);
+	} else {
+		Debug.Log("No need for shrinkwrap");
+	}
+}
+
+
+//When reading the texture into int array, pixels that match this condition will be ignored in other functions
+function IgnoreCondition (c: Color){
+	return c.a == 0;
+}
+
+
+//To reduce repeated GetPixel calls, this creates a 2d array of ints, where 0 is ignored, 1 is a pixel, 2 is a checked pixel, 3 is a smart pixel
+function MakeTexAsInts () {
+	TexAsInts = new int[theTex.width,theTex.height];
+	for (var i = 0; i< theTex.width; i++){
+		for (var j = 0; j< theTex.height; j++){
+			var c = theTex.GetPixel(i,j);
+			TexAsInts[i,j] = IgnoreCondition(c)?0:((SpriteEditor || SmartMode) && c == SmartColor)?3:1;
+		}
+	}
+}
+
+
+
+function LocatePivots () {
+	var outString = "Couldnt find pivot for: ";
+	MakeTexAsInts();
+	for (var j = 0; j<FontList.Length; j++){
+		if(outString[outString.Length-1] != " "[0]){outString += " ";}
+		for (var i = 0; i< Rects.Count; i++){
+			if(Rects[i].fontIndex != j){continue;}
+			if(FindPivots(i)){
+				UpdateFont(i, Rects[i].CIIndex, Rects[i].fontIndex, false);
+			} else {
+				if(outString[outString.Length-1] == " "[0]){
+					outString += FontList[Rects[i].fontIndex].name + ", frames:";
+				}
+				outString += (FontList[Rects[i].fontIndex].characterInfo[Rects[i].CIIndex].index-33) + ",";
+			}
+		}
+	}
+	if(outString.Length>27){
+		if(outString[outString.Length-1] == ","[0]){outString = outString.TrimEnd([","[0]]);}
+		Debug.Log(outString);
+	} else {
+		Debug.Log("All pivots in place");
+	}
+	
+}
+
+
+//for spritesetter, move the pivot to the smart pixel in the texture
+function FindPivots (RInd : int) {
+	for (var i = 0; i<Rects[RInd].rect.width; i++){
+		for (var j = 0; j<Rects[RInd].rect.height; j++){
+			if(TexAsInts[Rects[RInd].rect.x + i, Rects[RInd].rect.y + j] == 3){
+				Rects[RInd].spritePivot = Vector2(i, j);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+
+//finds which rect is anim: a frame: f
+function FindFrame () {
+	for (var i = 0; i<Rects.Count; i++){
+		if(Rects[i].fontIndex == SpritePropertiesFontIndex && FontList[Rects[i].fontIndex].characterInfo[Rects[i].CIIndex].index == SpriteFrame + 33){
+			return i;
+		}
+	}
+	Debug.Log("Unable to find frames in " + FontList[SpritePropertiesFontIndex].name);
+	return -1;
+}
+
+//returns a rect that is 'snapped' to unit measures
+function RoundedRect (r:Rect){
+	return Rect(Mathf.RoundToInt(r.x), Mathf.RoundToInt(r.y), Mathf.RoundToInt(r.width), Mathf.RoundToInt(r.height));
+}
+
+
+//returns a Vector2 that is 'snapped' to unit measures
+function RoundedV2 (v:Vector2){
+	return Vector2(Mathf.RoundToInt(v.x), Mathf.RoundToInt(v.y));
+}
+
+}

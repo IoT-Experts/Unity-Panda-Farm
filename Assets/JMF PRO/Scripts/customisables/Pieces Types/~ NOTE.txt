@@ -1,0 +1,31 @@
+
+Created by Match - 
+      If the piece is created by match; if disabled, will reduce a check pattern call for this piece.
+      You may want to "return false;" in the matchConditions() function.
+
+
+is Special - 
+      defines if the piece follows the standard color / type of the normal piece. if Enabled, does not follow...
+      Also defines if the piece is matchable with other non-special pieces of the same skin slot.
+
+
+is Destructible - defines if powers/matches can destroy the piece. e.g., bomb blast, arrow-hit etc...
+
+Allow Gravity - defines if the piece will fall down due to gravity
+
+Landslide effect - if 'allow gravity' above is false ( piece does not drop ), it will cause the neighbour
+                   pieces to landslide down instead.
+
+
+Ignore reset - defines if the piece will reset back to normal pieces during a "no more moves" reset.
+
+Score per Cube - the 'base' score of the piece when destroyed. ( will be multiplied by combo )
+
+Skin List To Use - defines the current list of skin to use dependant on the current board type.
+                   ( Auto, Square list only, Hex list only)
+
+Skin Square - A list of skin Defines the visual of the object in use for Square board types.
+
+Skin Hex - A list of skin Defines the visual of the object in use for Hex board types.
+--------------------
+P.S.> Unless it is a special, the order of the skin is important!

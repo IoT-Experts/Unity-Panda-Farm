@@ -1,0 +1,1 @@
+UniRatePlugin.java in this folder is the source code of Android native plugin, just in case if you want to customize the native pop up alert yourself. You can remove this folder in release version.

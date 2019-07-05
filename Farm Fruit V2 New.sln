@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2015
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Farm Fruit V2 New.CSharp.Plugins", "Farm Fruit V2 New.CSharp.Plugins.csproj", "{C013C490-22BD-421A-18FB-715B89A5811D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Farm Fruit V2 New.CSharp", "Farm Fruit V2 New.CSharp.csproj", "{7BEAF417-6E9E-122C-6D76-90F46FD07724}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Farm Fruit V2 New.CSharp.Editor.Plugins", "Farm Fruit V2 New.CSharp.Editor.Plugins.csproj", "{49DFE26F-0560-31C9-994E-CC827B2F61CA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Farm Fruit V2 New.CSharp.Editor", "Farm Fruit V2 New.CSharp.Editor.csproj", "{5DB36473-383D-88F8-9643-65987650A0E9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C013C490-22BD-421A-18FB-715B89A5811D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C013C490-22BD-421A-18FB-715B89A5811D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C013C490-22BD-421A-18FB-715B89A5811D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C013C490-22BD-421A-18FB-715B89A5811D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7BEAF417-6E9E-122C-6D76-90F46FD07724}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7BEAF417-6E9E-122C-6D76-90F46FD07724}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7BEAF417-6E9E-122C-6D76-90F46FD07724}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7BEAF417-6E9E-122C-6D76-90F46FD07724}.Release|Any CPU.Build.0 = Release|Any CPU
+		{49DFE26F-0560-31C9-994E-CC827B2F61CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49DFE26F-0560-31C9-994E-CC827B2F61CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49DFE26F-0560-31C9-994E-CC827B2F61CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49DFE26F-0560-31C9-994E-CC827B2F61CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5DB36473-383D-88F8-9643-65987650A0E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5DB36473-383D-88F8-9643-65987650A0E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5DB36473-383D-88F8-9643-65987650A0E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5DB36473-383D-88F8-9643-65987650A0E9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

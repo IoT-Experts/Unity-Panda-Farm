@@ -1,0 +1,114 @@
+fileFormatVersion: 2
+guid: 2ba1b056383f3d44fac837088800a301
+timeCreated: 1448859516
+licenseType: Pro
+TextureImporter:
+  fileIDToRecycleName:
+    21300000: sau1
+    21300002: sau2
+    21300004: sau3
+  serializedVersion: 2
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    linearTexture: 0
+    correctGamma: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+  isReadable: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 0
+  cubemapConvolution: 0
+  cubemapConvolutionSteps: 8
+  cubemapConvolutionExponent: 1.5
+  seamlessCubemap: 0
+  textureFormat: -3
+  maxTextureSize: 512
+  textureSettings:
+    filterMode: -1
+    aniso: -1
+    mipBias: -1
+    wrapMode: 1
+  nPOTScale: 0
+  lightmap: 0
+  rGBM: 0
+  compressionQuality: 50
+  allowsAlphaSplitting: 0
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spritePixelsToUnits: 100
+  alphaIsTransparency: 1
+  textureType: 8
+  buildTargetSettings: []
+  spriteSheet:
+    sprites:
+    - name: sau1
+      rect:
+        serializedVersion: 2
+        x: 38
+        y: 24
+        width: 92
+        height: 58
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline:
+      - - {x: -46, y: 29}
+        - {x: -46, y: -21}
+        - {x: -35, y: -29}
+        - {x: 20, y: -29}
+        - {x: 46, y: -15}
+        - {x: 46, y: 21}
+        - {x: 38, y: 29}
+    - name: sau2
+      rect:
+        serializedVersion: 2
+        x: 198
+        y: 24
+        width: 87
+        height: 79
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline:
+      - - {x: -20.5, y: 39.5}
+        - {x: -43.5, y: 15.5}
+        - {x: -43.5, y: -29.5}
+        - {x: -31.5, y: -39.5}
+        - {x: 43.5, y: -39.5}
+        - {x: 43.5, y: 29.5}
+        - {x: 40.5, y: 39.5}
+    - name: sau3
+      rect:
+        serializedVersion: 2
+        x: 374
+        y: 33
+        width: 81
+        height: 62
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline:
+      - - {x: -9.5, y: 31}
+        - {x: -40.5, y: 0}
+        - {x: -40.5, y: -25}
+        - {x: -33.5, y: -31}
+        - {x: 31.5, y: -31}
+        - {x: 40.5, y: -20}
+        - {x: 40.5, y: 31}
+    outline: []
+  spritePackingTag: 
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

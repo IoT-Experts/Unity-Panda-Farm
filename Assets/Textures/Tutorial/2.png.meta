@@ -1,0 +1,98 @@
+fileFormatVersion: 2
+guid: abb1050adf230cd4d9c4c5d4cf7bcbf6
+timeCreated: 1459759607
+licenseType: Pro
+TextureImporter:
+  fileIDToRecycleName:
+    21300000: target na2_0
+  serializedVersion: 2
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    linearTexture: 0
+    correctGamma: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+  isReadable: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 0
+  cubemapConvolution: 0
+  cubemapConvolutionSteps: 7
+  cubemapConvolutionExponent: 1.5
+  seamlessCubemap: 0
+  textureFormat: -3
+  maxTextureSize: 512
+  textureSettings:
+    filterMode: -1
+    aniso: -1
+    mipBias: -1
+    wrapMode: 1
+  nPOTScale: 0
+  lightmap: 0
+  rGBM: 0
+  compressionQuality: 50
+  allowsAlphaSplitting: 0
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spritePixelsToUnits: 100
+  alphaIsTransparency: 1
+  textureType: 8
+  buildTargetSettings: []
+  spriteSheet:
+    sprites:
+    - name: target na2_0
+      rect:
+        serializedVersion: 2
+        x: 60
+        y: 22
+        width: 350
+        height: 350
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline:
+      - - {x: 120, y: 112}
+        - {x: 54, y: 112}
+        - {x: 45, y: 109}
+        - {x: 38, y: 90}
+        - {x: 38, y: -137}
+        - {x: 58, y: -146}
+        - {x: 93, y: -146}
+        - {x: 119, y: -137}
+        - {x: 127, y: -130}
+        - {x: 137, y: -75}
+        - {x: 137, y: 70}
+      - - {x: -99, y: 112}
+        - {x: -151, y: 112}
+        - {x: -165, y: 76}
+        - {x: -165, y: 42}
+        - {x: -140, y: 20}
+        - {x: -91, y: 20}
+        - {x: -74, y: 23}
+        - {x: -71, y: 32}
+        - {x: -71, y: 90}
+      - - {x: -31, y: 112}
+        - {x: -42, y: 110}
+        - {x: -66, y: 77}
+        - {x: -66, y: 43}
+        - {x: -37, y: 20}
+        - {x: 11, y: 20}
+        - {x: 30, y: 35}
+        - {x: 30, y: 80}
+        - {x: 8, y: 112}
+    outline: []
+  spritePackingTag: 
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

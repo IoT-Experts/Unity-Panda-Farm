@@ -1,0 +1,192 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &119708
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  serializedVersion: 4
+  m_Component:
+  - 4: {fileID: 436752}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!1 &127420
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  serializedVersion: 4
+  m_Component:
+  - 4: {fileID: 498142}
+  - 114: {fileID: 11484762}
+  - 82: {fileID: 8281236}
+  m_Layer: 0
+  m_Name: MusicControll
+  m_TagString: music
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &436752
+Transform:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 119708}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 498142}
+  m_RootOrder: 0
+--- !u!4 &498142
+Transform:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 127420}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 3.6854997, y: 29.946, z: -18.1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 436752}
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+--- !u!82 &8281236
+AudioSource:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 127420}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: 03f80fcc75c69f049a53bd21279724ae, type: 3}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 1
+  Mute: 0
+  Spatialize: 0
+  Priority: 123
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+    - time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 0
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 0
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 0
+--- !u!114 &11484762
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 127420}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a54ee1faa57b2d4785b07dc4e9cfebc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  horizontal: {fileID: 8300000, guid: 55b789dc78261af4db3ffb69871c2651, type: 3}
+  convertingSpecialFx: {fileID: 8300000, guid: 296a8082e0b20c741bd477f6468394de, type: 3}
+  gameover: {fileID: 8300000, guid: c68b7d76c71777540ae96a7298e77bd4, type: 3}
+  matchSoundFx: {fileID: 8300000, guid: cdfffe251d495ff439fa00f3b93513dc, type: 3}
+  dropSoundFx: {fileID: 8300000, guid: c7486a7e359d6f849815a51801fcc3b5, type: 3}
+  switchSoundFx: {fileID: 8300000, guid: fb97a74cb96c9a246885c1e31003edc5, type: 3}
+  badMoveSoundFx: {fileID: 8300000, guid: 3d1d0928f81108a4faa901320680a36d, type: 3}
+  bombSoundFx: {fileID: 8300000, guid: 070897fc1ea525f47acc68e5acc61a1b, type: 3}
+  matchFiveSoundFx: {fileID: 8300000, guid: 03fd1b4d859a247469e583433ae162e0, type: 3}
+  specialMatchSoundFx: {fileID: 8300000, guid: 296a8082e0b20c741bd477f6468394de, type: 3}
+  treasureCollectedFx: {fileID: 8300000, guid: 5a185fc33548c7c4f93214d0e0275236, type: 3}
+  musicBackground: {fileID: 8300000, guid: 03f80fcc75c69f049a53bd21279724ae, type: 3}
+  ButtonClick: {fileID: 8300000, guid: 1909a1fb85b475f428c6605a81df9153, type: 3}
+  AddBasket: {fileID: 8300000, guid: 5d18a6f216599da439805fc13f682f51, type: 3}
+  winner: {fileID: 8300000, guid: a0d5b55166ecd1d42ba72ea55acd7a85, type: 3}
+  isSoundOn: 1
+  isMusicOn: 1
+--- !u!1001 &100100000
+Prefab:
+  m_ObjectHideFlags: 1
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 0}
+      propertyPath: m_TagString
+      value: music
+      objectReference: {fileID: 0}
+    - target: {fileID: 0}
+      propertyPath: dropSoundFx
+      value: 
+      objectReference: {fileID: 8300000, guid: a5ca1e1278846104a93902b1565ac4cf, type: 3}
+    - target: {fileID: 0}
+      propertyPath: musicBackground
+      value: 
+      objectReference: {fileID: 8300000, guid: 03f80fcc75c69f049a53bd21279724ae, type: 3}
+    - target: {fileID: 0}
+      propertyPath: m_Volume
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 0}
+      propertyPath: ButtonClick
+      value: 
+      objectReference: {fileID: 8300000, guid: 1909a1fb85b475f428c6605a81df9153, type: 3}
+    m_RemovedComponents: []
+  m_ParentPrefab: {fileID: 0}
+  m_RootGameObject: {fileID: 127420}
+  m_IsPrefabParent: 1

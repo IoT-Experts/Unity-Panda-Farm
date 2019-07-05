@@ -1,0 +1,245 @@
+fileFormatVersion: 2
+guid: 71ace00dbd3602744ab2538ed82f7c48
+timeCreated: 1453187936
+licenseType: Pro
+TextureImporter:
+  fileIDToRecycleName:
+    21300000: Qua_chanh_zpow
+    21300002: Qua_viet_quat
+    21300004: Qua_viet_quat_zpow
+    21300006: qua_3
+    21300008: Qua_na
+    21300010: Qua_na_zpow
+    21300012: qua_6
+    21300014: Qua_man
+    21300016: Qua_man_zpow
+    21300018: qua_9
+    21300020: Qua_ot
+    21300022: Qua_ot_zpow
+  serializedVersion: 2
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    linearTexture: 0
+    correctGamma: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+  isReadable: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 0
+  cubemapConvolution: 0
+  cubemapConvolutionSteps: 8
+  cubemapConvolutionExponent: 1.5
+  seamlessCubemap: 0
+  textureFormat: -3
+  maxTextureSize: 1024
+  textureSettings:
+    filterMode: -1
+    aniso: -1
+    mipBias: -1
+    wrapMode: 1
+  nPOTScale: 0
+  lightmap: 0
+  rGBM: 0
+  compressionQuality: 50
+  allowsAlphaSplitting: 0
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spritePixelsToUnits: 100
+  alphaIsTransparency: 1
+  textureType: 8
+  buildTargetSettings: []
+  spriteSheet:
+    sprites:
+    - name: Qua_viet_quat
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 941
+        width: 106
+        height: 105
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline:
+      - - {x: -28, y: 52.5}
+        - {x: -51, y: 41.5}
+        - {x: -53, y: 32.5}
+        - {x: -53, y: -39.5}
+        - {x: -43, y: -52.5}
+        - {x: 50, y: -52.5}
+        - {x: 53, y: -41.5}
+        - {x: 53, y: 36.5}
+        - {x: 37, y: 52.5}
+    - name: Qua_viet_quat_zpow
+      rect:
+        serializedVersion: 2
+        x: 458
+        y: 941
+        width: 115
+        height: 105
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline:
+      - - {x: -32.5, y: 52.5}
+        - {x: -57.5, y: 34.5}
+        - {x: -57.5, y: -28.5}
+        - {x: -45.5, y: -52.5}
+        - {x: 51.5, y: -52.5}
+        - {x: 57.5, y: -38.5}
+        - {x: 57.5, y: 45.5}
+        - {x: 44.5, y: 52.5}
+    - name: Qua_na
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 763
+        width: 104
+        height: 108
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline:
+      - - {x: -34, y: 54}
+        - {x: -52, y: 36}
+        - {x: -52, y: -39}
+        - {x: -50, y: -52}
+        - {x: -41, y: -54}
+        - {x: 38, y: -54}
+        - {x: 52, y: -45}
+        - {x: 52, y: 25}
+        - {x: 37, y: 54}
+    - name: Qua_na_zpow
+      rect:
+        serializedVersion: 2
+        x: 462
+        y: 762
+        width: 105
+        height: 112
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline:
+      - - {x: -27.5, y: 56}
+        - {x: -39.5, y: 49}
+        - {x: -52.5, y: 23}
+        - {x: -52.5, y: -27}
+        - {x: -48.5, y: -42}
+        - {x: -38.5, y: -54}
+        - {x: -29.5, y: -56}
+        - {x: 45.5, y: -56}
+        - {x: 52.5, y: -34}
+        - {x: 52.5, y: 37}
+        - {x: 23.5, y: 56}
+    - name: Qua_man
+      rect:
+        serializedVersion: 2
+        x: 257
+        y: 587
+        width: 104
+        height: 110
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline:
+      - - {x: -30, y: 55}
+        - {x: -52, y: 45}
+        - {x: -52, y: -44}
+        - {x: -41, y: -55}
+        - {x: 28, y: -55}
+        - {x: 52, y: -47}
+        - {x: 52, y: 44}
+        - {x: 36, y: 55}
+    - name: Qua_man_zpow
+      rect:
+        serializedVersion: 2
+        x: 460
+        y: 591
+        width: 111
+        height: 108
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline:
+      - - {x: -45.5, y: 54}
+        - {x: -55.5, y: 38}
+        - {x: -55.5, y: -34}
+        - {x: -51.5, y: -46}
+        - {x: -30.5, y: -54}
+        - {x: 34.5, y: -54}
+        - {x: 55.5, y: -30}
+        - {x: 55.5, y: 42}
+        - {x: 33.5, y: 54}
+    - name: Qua_ot
+      rect:
+        serializedVersion: 2
+        x: 254
+        y: 405
+        width: 109
+        height: 111
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline:
+      - - {x: -39.5, y: 55.5}
+        - {x: -54.5, y: 32.5}
+        - {x: -54.5, y: -55.5}
+        - {x: 30.5, y: -55.5}
+        - {x: 54.5, y: -30.5}
+        - {x: 54.5, y: 32.5}
+        - {x: 13.5, y: 55.5}
+    - name: Qua_ot_zpow
+      rect:
+        serializedVersion: 2
+        x: 463
+        y: 407
+        width: 105
+        height: 111
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline:
+      - - {x: -31.5, y: 55.5}
+        - {x: -52.5, y: 45.5}
+        - {x: -52.5, y: -37.5}
+        - {x: -30.5, y: -55.5}
+        - {x: 25.5, y: -55.5}
+        - {x: 52.5, y: -35.5}
+        - {x: 52.5, y: 27.5}
+        - {x: 37.5, y: 55.5}
+    - name: Qua_chanh_zpow
+      rect:
+        serializedVersion: 2
+        x: 459
+        y: 236
+        width: 109
+        height: 109
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline:
+      - - {x: -53.5, y: 54.5}
+        - {x: -54.5, y: 52.5}
+        - {x: -54.5, y: -42.5}
+        - {x: -22.5, y: -54.5}
+        - {x: 29.5, y: -54.5}
+        - {x: 54.5, y: -36.5}
+        - {x: 54.5, y: 33.5}
+        - {x: 30.5, y: 54.5}
+    outline: []
+  spritePackingTag: 
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

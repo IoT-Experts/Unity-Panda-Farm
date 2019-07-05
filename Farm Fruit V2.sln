@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2015
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Farm Fruit V2.CSharp.Plugins", "Farm Fruit V2.CSharp.Plugins.csproj", "{5A2AE5F0-B5C6-8D08-B48D-D7BC3C850108}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Farm Fruit V2.CSharp", "Farm Fruit V2.CSharp.csproj", "{3272F829-A563-F6B7-B6BE-E27BD39A7663}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Farm Fruit V2.CSharp.Editor.Plugins", "Farm Fruit V2.CSharp.Editor.Plugins.csproj", "{16C1ADDC-B7AF-C3B9-BD70-FECAE65D4779}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Farm Fruit V2.CSharp.Editor", "Farm Fruit V2.CSharp.Editor.csproj", "{D36B0E3F-7496-D7B5-46BF-E5CC7FB121ED}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5A2AE5F0-B5C6-8D08-B48D-D7BC3C850108}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A2AE5F0-B5C6-8D08-B48D-D7BC3C850108}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A2AE5F0-B5C6-8D08-B48D-D7BC3C850108}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A2AE5F0-B5C6-8D08-B48D-D7BC3C850108}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3272F829-A563-F6B7-B6BE-E27BD39A7663}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3272F829-A563-F6B7-B6BE-E27BD39A7663}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3272F829-A563-F6B7-B6BE-E27BD39A7663}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3272F829-A563-F6B7-B6BE-E27BD39A7663}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16C1ADDC-B7AF-C3B9-BD70-FECAE65D4779}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16C1ADDC-B7AF-C3B9-BD70-FECAE65D4779}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16C1ADDC-B7AF-C3B9-BD70-FECAE65D4779}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16C1ADDC-B7AF-C3B9-BD70-FECAE65D4779}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D36B0E3F-7496-D7B5-46BF-E5CC7FB121ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D36B0E3F-7496-D7B5-46BF-E5CC7FB121ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D36B0E3F-7496-D7B5-46BF-E5CC7FB121ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D36B0E3F-7496-D7B5-46BF-E5CC7FB121ED}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

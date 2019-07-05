@@ -1,0 +1,4 @@
+sceneSetups:
+- path: Assets/JMF PRO/Scenes/GameMenu.unity
+  isLoaded: 1
+  isActive: 1
